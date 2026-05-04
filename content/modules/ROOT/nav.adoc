@@ -1,0 +1,14 @@
+* xref:index.adoc[Welcome]
+
+.Getting Started
+* xref:getting-connected.adoc[Getting Connected]
+
+.Modules
+* xref:02-module-01-fake-gpus.adoc[Module 1: Fake GPUs]
+* xref:03-module-02-gpu-booking.adoc[Module 2: GPU Booking]
+* xref:04-module-03-hardware-profiles.adoc[Module 3: Hardware Profiles]
+* xref:05-module-04-kueue.adoc[Module 4: Kueue]
+* xref:06-module-05-preemption.adoc[Module 5: Preemption]
+
+.Wrap-up
+* xref:07-conclusion.adoc[Conclusion]

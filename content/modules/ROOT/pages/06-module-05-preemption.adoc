@@ -1,0 +1,271 @@
+= Module 5: Preemption Testing
+:navtitle: Module 5: Preemption
+:toc: macro
+:toclevels: 1
+:icons: font
+
+Preemption is the mechanism that gives reserved workloads priority over unreserved ones. When a user with a reservation submits a workload and there aren't enough free resources, Kueue evicts unreserved workloads to make room.
+
+In this module, you'll simulate a multi-user GPU contention scenario using the workload Helm chart and observe preemption in action.
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Deploy unreserved workloads that consume GPU resources
+* Trigger preemption by submitting a reserved workload
+* Observe the Kueue admission and eviction process
+* Test preemption with both full GPUs and MIG partitions
+
+== Kueue state after reservations
+
+Once users have reserved GPUs through the booking app, the Kueue resource hierarchy includes per-user ClusterQueues with protected quota, and reserved LocalQueues in each namespace:
+
+image::kueue-with-reservations.png[Kueue Hierarchy with Reservations,link=self,window=blank,width=700]
+
+The red LocalQueues (`user-admin`, `user-admin1`) point to per-user ClusterQueues with `reclaimWithinCohort: Any`. The unreserved ClusterQueue's `nominalQuota` has been reduced from 8 to 5 GPUs to account for the 3 GPUs reserved.
+
+== How preemption works in this environment
+
+image::preemption-flow.png[Preemption Flow,link=self,window=blank,width=700]
+
+The preemption model is based on Kueue's Cohort borrowing rules:
+
+----
+1. Unreserved workloads run using shared Cohort quota
+2. User makes a reservation → booking app creates ClusterQueue with nominalQuota
+3. User submits workload → ClusterQueue has reclaimWithinCohort: Any
+4. Kueue preempts unreserved workloads borrowing from the Cohort
+5. Reserved workload gets resources
+6. Unreserved workload re-queues, waits for resources
+----
+
+The `unreserved` ClusterQueue has no reclaim rights, so its workloads can always be preempted. User ClusterQueues have `reclaimWithinCohort: Any`, meaning they can preempt any workload borrowing from the same Cohort.
+
+== Exercise 1: Fill the cluster with unreserved workloads
+
+First, let's consume GPU resources with unreserved workloads.
+
+. Deploy an unreserved workload requesting 8 full GPUs (all available):
++
+[.copypaste]
+[source,bash]
+----
+helm template gpu-deploy workloads/ -n user-admin \
+  --set kind=Deployment \
+  --set name=gpu-fake-gpu \
+  --set replicas=1 \
+  --set gpuCount=8 \
+  --set gpuResourceType=nvidia.com/gpu \
+  --set reserved=false \
+  | oc -n user-admin apply --as=admin -f-
+----
+
+. Wait for the deployment to be ready:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-admin rollout status deployment/gpu-fake-gpu --timeout=60s
+----
+
+. Verify all GPUs are consumed:
++
+[.copypaste]
+[source,bash]
+----
+oc get clusterqueue unreserved -o jsonpath='{.status.flavorsUsage}' | jq .
+----
+
+. Verify nvidia-smi shows the GPUs:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-admin exec $(oc -n user-admin get pod -l app=gpu-fake-gpu -o name | head -1) -- nvidia-smi
+----
+
+=== Verify
+
+&#10003; Unreserved deployment is running with 8 GPUs +
+&#10003; ClusterQueue shows all GPU resources in use
+
+== Exercise 2: Trigger preemption with a reserved workload
+
+Now deploy a reserved workload from a different user. This simulates a user with a GPU reservation claiming their resources.
+
+. Deploy a reserved workload requesting 1 GPU as a different user:
++
+[.copypaste]
+[source,bash]
+----
+helm template gpu-deploy workloads/ -n user-admin1 \
+  --set kind=Deployment \
+  --set name=gpu-fake-gpu \
+  --set replicas=1 \
+  --set gpuCount=1 \
+  --set gpuResourceType=nvidia.com/gpu \
+  --set reserved=true \
+  | oc -n user-admin1 apply --as=admin1 -f-
+----
+
+. Watch the preemption happen:
++
+[.copypaste]
+[source,bash]
+----
+oc get events -A --sort-by='.lastTimestamp' --field-selector reason=Preempted -w
+----
++
+Press `Ctrl+C` after you see preemption events. Kueue evicts the unreserved workload to free one GPU for the reserved request.
+
+. Check the workload status:
++
+[.copypaste]
+[source,bash]
+----
+oc get workloads -A -o custom-columns=\
+NAMESPACE:.metadata.namespace,\
+NAME:.metadata.name,\
+QUEUE:.spec.queueName,\
+ADMISSION:.status.admission.clusterQueue,\
+ADMITTED:.status.conditions[0].status
+----
+
+. Verify the reserved workload is running:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-admin1 rollout status deployment/gpu-fake-gpu --timeout=60s
+----
+
+. Check nvidia-smi on both workloads:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-admin exec $(oc -n user-admin get pod -l app=gpu-fake-gpu -o name | head -1) -- nvidia-smi
+oc -n user-admin1 exec $(oc -n user-admin1 get pod -l app=gpu-fake-gpu -o name | head -1) -- nvidia-smi
+----
+
+=== Verify
+
+&#10003; Reserved workload preempted the unreserved workload +
+&#10003; Both workloads are now running (unreserved with fewer GPUs) +
+&#10003; nvidia-smi shows GPU allocation in both pods
+
+== Exercise 3: Test MIG partition preemption
+
+Preemption also works with MIG partitions. Let's test with MIG-1g.18gb devices.
+
+. Deploy an unreserved workload consuming 16 MIG-1g.18gb partitions:
++
+[.copypaste]
+[source,bash]
+----
+helm template gpu-deploy workloads/ -n user-admin \
+  --set kind=Deployment \
+  --set name=gpu-fake-18gb \
+  --set replicas=1 \
+  --set gpuCount=16 \
+  --set gpuResourceType=nvidia.com/mig-1g.18gb \
+  --set reserved=false \
+  | oc -n user-admin apply --as=admin -f-
+----
+
+. Wait for deployment:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-admin rollout status deployment/gpu-fake-18gb --timeout=60s
+----
+
+. Deploy a reserved workload requesting 8 MIG partitions:
++
+[.copypaste]
+[source,bash]
+----
+helm template gpu-deploy workloads/ -n user-admin1 \
+  --set kind=Deployment \
+  --set name=gpu-fake-18gb \
+  --set replicas=1 \
+  --set gpuCount=8 \
+  --set gpuResourceType=nvidia.com/mig-1g.18gb \
+  --set reserved=true \
+  | oc -n user-admin1 apply --as=admin1 -f-
+----
+
+. Watch preemption and verify both are running:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-admin1 rollout status deployment/gpu-fake-18gb --timeout=60s
+----
+
+. Check nvidia-smi on the MIG workloads:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-admin exec $(oc -n user-admin get pod -l app=gpu-fake-18gb -o name | head -1) -- nvidia-smi
+oc -n user-admin1 exec $(oc -n user-admin1 get pod -l app=gpu-fake-18gb -o name | head -1) -- nvidia-smi
+----
++
+Notice the MIG partition size (18 GB) shown in nvidia-smi output.
+
+=== Verify
+
+&#10003; Unreserved MIG workload preempted by reserved MIG workload +
+&#10003; Both MIG workloads running with correct partition counts
+
+== Exercise 4: Clean up all workloads
+
+. Remove all test deployments:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-admin delete deployment gpu-fake-gpu
+oc -n user-admin delete deployment gpu-fake-18gb
+oc -n user-admin1 delete deployment gpu-fake-gpu
+oc -n user-admin1 delete deployment gpu-fake-18gb
+----
+
+. Verify all GPU resources are free:
++
+[.copypaste]
+[source,bash]
+----
+oc get clusterqueues -o custom-columns=\
+NAME:.metadata.name,\
+ADMITTED:.status.admittedWorkloads
+----
++
+All ClusterQueues should show 0 admitted workloads.
+
+=== Verify
+
+&#10003; All test deployments deleted +
+&#10003; GPU resources fully released
+
+== Module summary
+
+**What you accomplished:**
+
+* Filled the cluster with unreserved GPU workloads
+* Triggered preemption by submitting a reserved workload
+* Observed Kueue evicting unreserved workloads to honor reserved quotas
+* Tested preemption with both full GPUs and MIG partitions
+
+**Key takeaways:**
+
+* Reserved workloads always win over unreserved ones through Kueue's `reclaimWithinCohort: Any` policy
+* Preemption is automatic -- Kueue handles eviction without manual intervention
+* MIG partitions follow the same preemption model as full GPUs
+* The booking app creates the Kueue resources that make preemption possible; users only interact with the calendar
+* Unreserved workloads are not lost -- they re-queue and resume when resources become available
+
+**Next:** Head to the Conclusion for a summary of what you learned and resources to continue your journey.

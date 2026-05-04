@@ -1,0 +1,12 @@
+{
+  "name": "fake-gpu-booking-workshop",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "antora site.yml --stacktrace"
+  },
+  "dependencies": {
+    "@antora/cli": "^3.1",
+    "@antora/site-generator": "^3.1"
+  }
+}

@@ -1,0 +1,119 @@
+= Getting Connected
+:navtitle: Getting Connected
+
+In this activity, you will connect to your workshop environment and verify access to the OpenShift cluster and OpenShift AI console.
+
+== Log in to the OpenShift Console
+
+. Open the OpenShift Console in the right panel or navigate to:
++
+`{openshift_console_url}`
+
+. Log in with the following credentials:
++
+**Username:** `{user}` +
+**Password:** `{password}`
+
+== Log in from the command line
+
+. Open a terminal in your environment.
+
+. Log in to the OpenShift cluster:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u {user} -p {password}
+----
+
+. Verify your identity:
++
+[.copypaste]
+[source,bash]
+----
+oc whoami
+----
+
+== Verify GPU resources
+
+. Check that fake GPU nodes are available:
++
+[.copypaste]
+[source,bash]
+----
+oc get nodes -l nvidia.com/gpu.present=true
+----
+
+. Verify GPU resources are allocatable:
++
+[.copypaste]
+[source,bash]
+----
+oc describe node -l nvidia.com/gpu.present=true | grep -A 10 "Allocatable:"
+----
++
+You should see `nvidia.com/gpu`, `nvidia.com/mig-1g.18gb`, `nvidia.com/mig-2g.35gb`, and `nvidia.com/mig-3g.71gb` in the allocatable resources.
+
+== Verify Kueue is running
+
+. Check Kueue controller pods:
++
+[.copypaste]
+[source,bash]
+----
+oc get pods -n kueue-system
+----
+
+. List the ClusterQueues:
++
+[.copypaste]
+[source,bash]
+----
+oc get clusterqueues
+----
++
+You should see at least `default`, `unreserved`, and `unreserved-priority` ClusterQueues.
+
+== Access OpenShift AI
+
+. Navigate to the OpenShift AI dashboard:
++
+`{openshift_ai_url}`
++
+Or click **Red Hat OpenShift AI** in the right panel tabs.
+
+. Verify you can see the Data Science Projects page.
+
+== Set up your namespace
+
+. Verify your user namespace exists:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc project {user}
+----
+
+. Check LocalQueues in your namespace:
++
+[.copypaste]
+[source,bash]
+----
+oc get localqueues
+----
++
+You should see `default` and `unreserved` LocalQueues.
+
+=== Verify
+
+You are ready to proceed when: +
+&#10003; Logged into the OpenShift Console +
+&#10003; `oc whoami` returns your username +
+&#10003; Fake GPU nodes are visible with allocatable GPU resources +
+&#10003; Kueue ClusterQueues exist +
+&#10003; OpenShift AI dashboard is accessible +
+&#10003; Your namespace has LocalQueues
+
+== End of activity
+
+You are now connected and ready to begin the workshop modules.

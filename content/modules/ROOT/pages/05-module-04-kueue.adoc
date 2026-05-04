@@ -1,0 +1,249 @@
+= Module 4: Kueue Concepts
+:navtitle: Module 4: Kueue
+:toc: macro
+:toclevels: 1
+:icons: font
+
+Kueue is a Kubernetes-native job queueing system that manages resource quotas, fair sharing, and workload preemption. In this workshop environment, Kueue controls how GPU resources are shared between users with reservations and those using the unreserved pool.
+
+In this module, you'll explore the Kueue resource hierarchy, understand how Cohorts enable resource sharing, and trace a workload through the admission process.
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Describe the Kueue resource hierarchy: ResourceFlavor, ClusterQueue, LocalQueue, Cohort
+* Explain how the unreserved Cohort enables borrowing and reclaiming
+* Submit a workload and trace its admission through Kueue
+* Identify when and why workloads are queued vs. admitted
+
+== Kueue resource hierarchy
+
+image::kueue-resource-hierarchy.png[Kueue Resource Hierarchy,link=self,window=blank,width=700]
+
+The workshop cluster configures Kueue resources in a flat Cohort model:
+
+----
+Cohort: unreserved
+├── ClusterQueue: unreserved        (borrows from cohort, no preemption rights)
+├── ClusterQueue: unreserved-priority (can preempt low-priority borrowing workloads)
+├── ClusterQueue: user-alice        (protected nominalQuota, can reclaim from cohort)
+└── ClusterQueue: user-bob          (protected nominalQuota, can reclaim from cohort)
+----
+
+All ClusterQueues share resources through the **unreserved** Cohort. The key difference is in their preemption policies:
+
+[cols="1,1,1,1",options="header"]
+|===
+| ClusterQueue | nominalQuota | Borrow? | Preempt?
+
+| `unreserved`
+| Total minus reserved
+| Yes (from cohort)
+| No
+
+| `unreserved-priority`
+| 0
+| Yes (from cohort)
+| Low-priority borrowing only
+
+| `user-<name>`
+| User's reservation
+| No
+| Yes (reclaim within cohort)
+|===
+
+== Exercise 1: Explore ClusterQueues
+
+. List all ClusterQueues with their key properties:
++
+[.copypaste]
+[source,bash]
+----
+oc get clusterqueues -o custom-columns=\
+NAME:.metadata.name,\
+COHORT:.spec.cohort,\
+ADMITTED:.status.admittedWorkloads,\
+PENDING:.status.pendingWorkloads
+----
+
+. Inspect the `unreserved` ClusterQueue:
++
+[.copypaste]
+[source,bash]
+----
+oc get clusterqueue unreserved -o yaml
+----
++
+Key fields to note:
++
+* `spec.cohort: unreserved` -- joins the shared Cohort
+* `spec.resourceGroups` -- defines flavors and nominal quotas
+* `spec.preemption` -- no reclaim rights
+
+. Compare with a user ClusterQueue (if one exists from Module 2):
++
+[.copypaste]
+[source,bash]
+----
+oc get clusterqueues -o yaml | grep -B 2 -A 5 "reclaimWithinCohort"
+----
++
+User ClusterQueues have `reclaimWithinCohort: Any` -- they can preempt unreserved workloads to reclaim their protected quota.
+
+=== Verify
+
+&#10003; Can list ClusterQueues and their Cohort membership +
+&#10003; Understand the preemption policy difference between `unreserved` and `user-*` queues
+
+== Exercise 2: Explore ResourceFlavors and Topology
+
+. List ResourceFlavors:
++
+[.copypaste]
+[source,bash]
+----
+oc get resourceflavors
+----
+
+. Inspect the H200 ResourceFlavor:
++
+[.copypaste]
+[source,bash]
+----
+oc get resourceflavors -o yaml | grep -A 20 "spec:"
+----
++
+ResourceFlavors define node affinity and tolerations that match workloads to the right nodes -- in this case, nodes with simulated H200 GPUs.
+
+. Check the Topology configuration:
++
+[.copypaste]
+[source,bash]
+----
+oc get topologies -A
+----
++
+Topology defines zone and hostname levels for pod spreading.
+
+=== Verify
+
+&#10003; ResourceFlavor exists for GPU nodes +
+&#10003; Topology configuration defines scheduling levels
+
+== Exercise 3: Trace a workload through admission
+
+. Submit a GPU workload to the unreserved queue:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+helm template gpu-deploy workloads/ -n {user} \
+  --set kind=Pod \
+  --set name=kueue-test \
+  --set replicas=1 \
+  --set gpuCount=1 \
+  --set gpuResourceType=nvidia.com/gpu \
+  --set reserved=false \
+  | oc -n {user} apply -f-
+----
+
+. Watch the workload admission:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc -n {user} get workloads -w
+----
++
+Press `Ctrl+C` after the workload is admitted.
+
+. Check which ClusterQueue admitted the workload:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc -n {user} get workloads -o custom-columns=\
+NAME:.metadata.name,\
+QUEUE:.spec.queueName,\
+ADMISSION:.status.admission.clusterQueue
+----
++
+Unreserved workloads are admitted by the `unreserved` ClusterQueue.
+
+. View the ClusterQueue usage after admission:
++
+[.copypaste]
+[source,bash]
+----
+oc get clusterqueue unreserved -o jsonpath='{.status.flavorsUsage}' | jq .
+----
+
+. Clean up:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc -n {user} delete pod kueue-test
+----
+
+=== Verify
+
+&#10003; Workload was admitted by the `unreserved` ClusterQueue +
+&#10003; ClusterQueue usage reflects the admitted workload +
+&#10003; Workload cleaned up
+
+== Exercise 4: Understand the Cohort model
+
+The Cohort is the key to resource sharing. All ClusterQueues in the same Cohort share a single pool of resources:
+
+. View the Cohort resource totals:
++
+[.copypaste]
+[source,bash]
+----
+oc get clusterqueues -o custom-columns=\
+NAME:.metadata.name,\
+COHORT:.spec.cohort \
+| grep unreserved
+----
+
+. The total resources available in the Cohort equal:
++
+`Total GPU capacity - Sum of all user reservations = Unreserved Cohort quota`
++
+When a user makes a reservation, the booking app reduces the `unreserved` ClusterQueue's nominalQuota by the reserved amount.
+
+. Check the WorkloadPriorityClasses:
++
+[.copypaste]
+[source,bash]
+----
+oc get workloadpriorityclasses
+----
++
+Higher priority workloads are admitted first and can preempt lower priority ones (within preemption policy rules).
+
+=== Verify
+
+&#10003; Understand that Cohort enables resource sharing across ClusterQueues +
+&#10003; Reservation reduces unreserved quota dynamically +
+&#10003; WorkloadPriorityClasses control admission order
+
+== Module summary
+
+**What you accomplished:**
+
+* Explored the Kueue resource hierarchy: ResourceFlavors, ClusterQueues, LocalQueues, Cohorts
+* Understood the flat Cohort model with protected user quotas and shared unreserved pool
+* Traced a workload from submission to Kueue admission
+* Learned how reservations dynamically adjust Cohort quotas
+
+**Key takeaways:**
+
+* Kueue provides fair, quota-based GPU scheduling without custom controllers
+* The Cohort model allows unused reserved capacity to be borrowed by unreserved workloads
+* User ClusterQueues have `reclaimWithinCohort: Any` to preempt unreserved workloads when needed
+* ResourceFlavors map Kueue quotas to physical (or simulated) GPU nodes
+
+**Next:** Module 5 puts it all together with preemption testing -- see what happens when reserved workloads claim resources from unreserved ones.

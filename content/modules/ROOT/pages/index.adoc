@@ -1,0 +1,87 @@
+= GPU Resource Management on OpenShift
+
+Welcome to the GPU Resource Management workshop! In this hands-on session, you'll learn how to simulate GPU hardware, manage GPU reservations through a booking interface, and control workload scheduling with Kueue -- all on OpenShift with Red Hat OpenShift AI.
+
+This workshop uses **fake GPUs** -- simulated NVIDIA H200 accelerators running on CPU-only nodes -- so you can learn GPU resource management patterns without needing real GPU hardware. Everything you learn here applies directly to production GPU clusters.
+
+== What you'll learn
+
+In this workshop, you will:
+
+* **Set up fake GPU nodes** -- understand how the fake-gpu-operator simulates NVIDIA GPUs and MIG partitions on CPU-only clusters
+* **Use the GPU Booking App** -- reserve GPU time slots through an OpenShift Console plugin with a calendar interface
+* **Configure RHOAI Hardware Profiles** -- connect GPU reservations to OpenShift AI workbenches and model serving
+* **Understand Kueue scheduling** -- explore ClusterQueues, LocalQueues, Cohorts, and ResourceFlavors for fair GPU sharing
+* **Test preemption** -- observe how reserved workloads preempt unreserved ones using Kueue's cohort borrowing model
+
+== Architecture overview
+
+The workshop environment consists of several integrated components:
+
+image::architecture-overview.png[Workshop Architecture Overview,link=self,window=blank,width=700]
+
+[cols="1,3"]
+|===
+| Component | Purpose
+
+| **Fake GPU Operator**
+| Simulates NVIDIA H200 GPUs and MIG partitions on CPU nodes via a Kubernetes device plugin
+
+| **GPU Booking App**
+| OpenShift Console plugin providing a calendar UI for reserving GPU time slots
+
+| **Kueue**
+| Kubernetes-native job queueing system that manages GPU quotas, fair sharing, and preemption
+
+| **Red Hat OpenShift AI**
+| ML platform with workbenches, model serving, and hardware profiles linked to Kueue queues
+
+| **Node Feature Discovery**
+| Labels nodes with hardware capabilities for GPU scheduling
+|===
+
+== GPU resources in this cluster
+
+Your workshop cluster simulates a node pool with these GPU resources:
+
+[cols="2,1,1,1",options="header"]
+|===
+| Resource Type | Device Name | Count | GPU Equivalent
+
+| H200 Full GPU
+| `nvidia.com/gpu`
+| 8
+| 1.0
+
+| MIG 3g.71gb
+| `nvidia.com/mig-3g.71gb`
+| 8
+| 0.5
+
+| MIG 2g.35gb
+| `nvidia.com/mig-2g.35gb`
+| 8
+| 0.25
+
+| MIG 1g.18gb
+| `nvidia.com/mig-1g.18gb`
+| 16
+| 0.125
+|===
+
+== Who this is for
+
+This workshop is designed for platform engineers, ML engineers, and cluster administrators who want hands-on experience with:
+
+* GPU resource management on Kubernetes/OpenShift
+* Kueue-based workload scheduling and quota management
+* Multi-tenant GPU sharing with preemption
+* OpenShift AI platform administration
+
+**Experience level**: Intermediate -- familiarity with OpenShift/Kubernetes concepts is helpful.
+
+**Estimated time**: 90 minutes
+
+== Let's get started!
+
+Click **Getting Connected** in the navigation to set up your environment.

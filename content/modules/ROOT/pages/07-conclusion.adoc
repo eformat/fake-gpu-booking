@@ -1,0 +1,46 @@
+= Conclusion
+:navtitle: Conclusion
+
+Congratulations on completing the GPU Resource Management on OpenShift workshop!
+
+== What you accomplished
+
+**Module 1: Fake GPU Cluster Setup** +
+Explored the fake-gpu-operator, inspected GPU topology, and deployed pods consuming simulated H200 GPUs and MIG partitions.
+
+**Module 2: GPU Booking App** +
+Used the OpenShift Console plugin to reserve GPU time slots and observed the Kueue resources created by the reservation sync.
+
+**Module 3: RHOAI Hardware Profiles** +
+Connected GPU reservations to OpenShift AI workbenches through Hardware Profiles and launched a GPU-enabled workbench.
+
+**Module 4: Kueue Concepts** +
+Explored ClusterQueues, Cohorts, ResourceFlavors, and traced workloads through the Kueue admission process.
+
+**Module 5: Preemption Testing** +
+Simulated multi-user GPU contention and observed reserved workloads preempting unreserved ones -- with both full GPUs and MIG partitions.
+
+== Key takeaways
+
+**GPU Simulation** +
+The fake-gpu-operator provides a complete GPU simulation layer for development and testing without hardware cost. Everything from device plugin registration to nvidia-smi emulation works identically to real GPUs from Kubernetes' perspective.
+
+**Resource Booking** +
+The GPU Booking App bridges calendar-based scheduling and Kubernetes resource management. Users book GPU time through a familiar interface while the system creates Kueue resources behind the scenes.
+
+**Fair Sharing with Preemption** +
+Kueue's Cohort model enables fair resource sharing: unreserved workloads can use all available GPUs, but reserved users can reclaim their allocation instantly through preemption.
+
+**Platform Integration** +
+Hardware Profiles connect the booking system to RHOAI's workbench experience, letting data scientists select GPU types without needing to understand Kueue internals.
+
+== Resources
+
+* https://kueue.sigs.k8s.io/docs/concepts[Kueue Concepts^]
+* https://docs.redhat.com/en/documentation/red_hat_openshift_ai_self-managed[Red Hat OpenShift AI Documentation^]
+* https://docs.openshift.com/container-platform/latest[OpenShift Container Platform Documentation^]
+* https://github.com/run-ai/fake-gpu-operator[Fake GPU Operator^]
+
+== Thank you
+
+Thank you for participating in this workshop. We hope you now have a solid understanding of GPU resource management patterns on OpenShift and can apply these concepts to your own GPU infrastructure.

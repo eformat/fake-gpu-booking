@@ -1,0 +1,18 @@
+name: modules
+title: "GPU Resource Management on OpenShift"
+version: ~
+nav:
+  - modules/ROOT/nav.adoc
+
+asciidoc:
+  attributes:
+    source-highlighter: highlight.js
+    experimental: true
+    page-pagination: true
+    lab_name: "GPU Resource Management on OpenShift"
+    user: user-abc123
+    password: "%password%"
+    openshift_api_url: "https://api.cluster.example.com:6443"
+    openshift_console_url: "https://console-openshift-console.apps.cluster.example.com"
+    openshift_ai_url: "https://rhods-dashboard-redhat-ods-applications.apps.cluster.example.com"
+    openshift_cluster_ingress_domain: apps.cluster.example.com
