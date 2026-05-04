@@ -15,7 +15,7 @@ spec:
       ref: values
     - repoURL: ghcr.io/run-ai/fake-gpu-operator
       chart: fake-gpu-operator
-      targetRevision: 0.4.0
+      targetRevision: 0.0.80
       helm:
         valueFiles:
           - $values/fake-gpu-operator/values.yaml
