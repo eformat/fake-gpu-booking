@@ -1,0 +1,14 @@
+---
+resources:
+  - dsci-cr.yaml
+  - dsc-cr.yaml
+  - odh-dashboard.yaml
+
+helmGlobals:
+  chartHome: ../../olm
+
+helmCharts:
+  - name: olm-v0-chart
+    includeCRDs: true
+    releaseName: olm-v0-chart
+    valuesFile: values-v0.yaml

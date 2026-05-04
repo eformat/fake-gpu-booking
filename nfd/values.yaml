@@ -1,0 +1,23 @@
+namespace: openshift-nfd
+
+subscription:
+  channel: stable
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+
+nfd:
+  instance: ""
+  prunerOnDelete: true
+  topologyUpdater: false
+  workerConfig:
+    configData: |-
+      core:
+        sleepInterval: 60s
+      sources:
+        pci:
+          deviceClassWhitelist:
+            - "0200"
+            - "03"
+            - "12"
+          deviceLabelFields:
+            - "vendor"

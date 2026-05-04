@@ -1,0 +1,5 @@
+apiVersion: v2
+name: gpu-test-workloads
+description: GPU testing workloads for OpenShift with Kueue integration
+version: 0.1.0
+type: application

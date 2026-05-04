@@ -1,0 +1,33 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gpu-booking-app-plugin
+  namespace: openshift-gitops
+spec:
+  destination:
+    namespace: gpu-booking-app-plugin
+    server: "https://kubernetes.default.svc"
+  project: default
+  sources:
+    - repoURL: https://github.com/eformat/fake-gpu-booking.git
+      targetRevision: main
+      ref: values
+    - repoURL: https://github.com/rhai-code/gpu-booking-app-plugin
+      targetRevision: main
+      path: chart
+      helm:
+        valueFiles:
+          - $values/gpu-booking-app-plugin/values.yaml
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - Validate=true
+      - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true
+      - RespectIgnoreDifferences=true
+    managedNamespaceMetadata:
+      labels:
+        argocd.argoproj.io/managed-by: openshift-gitops

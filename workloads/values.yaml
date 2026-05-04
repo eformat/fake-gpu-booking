@@ -1,0 +1,42 @@
+kind: Pod
+
+name: gpu-pod
+
+replicas: 1
+
+image:
+  repository: nvcr.io/nvidia/k8s/cuda-sample
+  tag: vectoradd-cuda12.5.0
+
+command:
+  - /bin/bash
+  - -c
+  - "sleep inf"
+
+gpuResourceType: nvidia.com/gpu
+
+gpuCount: 8
+
+# -- Set to true for reserved queue/hardware profile, false for unreserved
+reserved: false
+
+hardwareProfile:
+  namespace: ""
+
+requiredSCC: restricted-v2
+
+nodeSelector:
+  nvidia.com/gpu.present: "true"
+
+tolerations:
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule
+
+extraEnv: []
+
+extraLabels: {}
+
+extraAnnotations: {}
+
+restartPolicy: Never

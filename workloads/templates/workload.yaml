@@ -1,0 +1,36 @@
+{{- if eq .Values.kind "Pod" }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Values.name }}
+  labels:
+    {{- include "gpu-test-workloads.labels" . | nindent 4 }}
+  annotations:
+    {{- include "gpu-test-workloads.annotations" . | nindent 4 }}
+spec:
+  restartPolicy: {{ .Values.restartPolicy }}
+  {{- include "gpu-test-workloads.podSpec" . | nindent 2 }}
+{{- else if eq .Values.kind "Deployment" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}
+  labels:
+    {{- include "gpu-test-workloads.labels" . | nindent 4 }}
+  annotations:
+    {{- include "gpu-test-workloads.annotations" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+        {{- include "gpu-test-workloads.labels" . | nindent 8 }}
+      annotations:
+        {{- include "gpu-test-workloads.annotations" . | nindent 8 }}
+    spec:
+      {{- include "gpu-test-workloads.podSpec" . | nindent 6 }}
+{{- end }}

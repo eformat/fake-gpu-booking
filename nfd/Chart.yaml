@@ -1,0 +1,5 @@
+apiVersion: v2
+name: nfd
+description: Node Feature Discovery operator for OpenShift via OLM
+version: 0.1.0
+type: application

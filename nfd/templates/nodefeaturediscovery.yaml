@@ -1,0 +1,13 @@
+---
+apiVersion: nfd.openshift.io/v1
+kind: NodeFeatureDiscovery
+metadata:
+  name: nfd-instance
+  namespace: {{ .Values.namespace }}
+spec:
+  instance: {{ .Values.nfd.instance | quote }}
+  prunerOnDelete: {{ .Values.nfd.prunerOnDelete }}
+  topologyUpdater: {{ .Values.nfd.topologyUpdater }}
+  workerConfig:
+    configData: |-
+{{ .Values.nfd.workerConfig.configData | indent 6 }}
