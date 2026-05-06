@@ -1,0 +1,59 @@
+---
+namespace: gpu-operator
+
+resources:
+  - namespace.yaml
+  - label-nodes-job.yaml
+
+helmCharts:
+  - name: fake-gpu-operator
+    repo: oci://ghcr.io/run-ai/fake-gpu-operator
+    version: 0.0.80
+    includeCRDs: true
+    releaseName: fake-gpu-operator
+    namespace: gpu-operator
+    valuesFile: values.yaml
+
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: add
+        path: /metadata/namespace
+        value: gpu-operator
+  - target:
+      kind: DaemonSet
+    patch: |-
+      - op: add
+        path: /metadata/namespace
+        value: gpu-operator
+  - target:
+      kind: Service
+    patch: |-
+      - op: add
+        path: /metadata/namespace
+        value: gpu-operator
+  - target:
+      kind: ServiceAccount
+    patch: |-
+      - op: add
+        path: /metadata/namespace
+        value: gpu-operator
+  - target:
+      kind: ConfigMap
+    patch: |-
+      - op: add
+        path: /metadata/namespace
+        value: gpu-operator
+  - target:
+      kind: Role
+    patch: |-
+      - op: add
+        path: /metadata/namespace
+        value: gpu-operator
+  - target:
+      kind: RoleBinding
+    patch: |-
+      - op: add
+        path: /metadata/namespace
+        value: gpu-operator

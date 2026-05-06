@@ -8,3 +8,10 @@ www/
 .env.local
 .env.*.local
 package-lock.json
+
+# kustomize helm chart cache (downloaded during build)
+acm/base/charts/gpu-booking-plugin-*/
+acm/base/charts/fake-gpu-operator-*/
+acm/base/gpu-operator/charts/
+
+WORKSHOP_OUTLINE.md

@@ -1,0 +1,36 @@
+---
+resources:
+  - rhoai.yaml
+  - gpu-operator
+  - namespace-gpu-booking-app-plugin.yaml
+
+helmGlobals:
+  chartHome: charts
+
+helmCharts:
+  - name: nfd
+    includeCRDs: false
+    releaseName: nfd
+    valuesFile: charts/nfd/values.yaml
+
+  - name: gpu-rbac
+    includeCRDs: false
+    releaseName: gpu-rbac
+    valuesFile: charts/gpu-rbac/values.yaml
+
+  - name: gpu-booking-plugin
+    repo: https://eformat.github.io/helm-charts
+    version: 0.1.0
+    includeCRDs: false
+    releaseName: gpu-booking-plugin
+    namespace: gpu-booking-app-plugin
+    valuesFile: values-gpu-booking-plugin.yaml
+
+patches:
+  - target:
+      kind: ServiceAccount
+      name: gpu-booking-plugin
+    patch: |-
+      - op: add
+        path: /metadata/namespace
+        value: gpu-booking-app-plugin

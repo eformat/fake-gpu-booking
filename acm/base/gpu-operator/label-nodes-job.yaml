@@ -1,0 +1,192 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gpu-node-labeler
+  namespace: gpu-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gpu-node-labeler
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gpu-node-labeler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: gpu-node-labeler
+subjects:
+  - kind: ServiceAccount
+    name: gpu-node-labeler
+    namespace: gpu-operator
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mig-config
+  namespace: gpu-operator
+data:
+  mig.config: |
+    version: v1
+    mig-configs:
+      selected:
+      - devices: ["0"]
+        mig-enabled: true
+        mig-devices:
+          - name: 3g.71gb
+            position: 0
+            size: 4
+          - name: 2g.35gb
+            position: 4
+            size: 2
+          - name: 1g.18gb
+            position: 6
+            size: 1
+          - name: 1g.18gb
+            position: 7
+            size: 1
+      - devices: ["1"]
+        mig-enabled: true
+        mig-devices:
+          - name: 3g.71gb
+            position: 0
+            size: 4
+          - name: 2g.35gb
+            position: 4
+            size: 2
+          - name: 1g.18gb
+            position: 6
+            size: 1
+          - name: 1g.18gb
+            position: 7
+            size: 1
+      - devices: ["2"]
+        mig-enabled: true
+        mig-devices:
+          - name: 3g.71gb
+            position: 0
+            size: 4
+          - name: 2g.35gb
+            position: 4
+            size: 2
+          - name: 1g.18gb
+            position: 6
+            size: 1
+          - name: 1g.18gb
+            position: 7
+            size: 1
+      - devices: ["3"]
+        mig-enabled: true
+        mig-devices:
+          - name: 3g.71gb
+            position: 0
+            size: 4
+          - name: 2g.35gb
+            position: 4
+            size: 2
+          - name: 1g.18gb
+            position: 6
+            size: 1
+          - name: 1g.18gb
+            position: 7
+            size: 1
+      - devices: ["4"]
+        mig-enabled: true
+        mig-devices:
+          - name: 3g.71gb
+            position: 0
+            size: 4
+          - name: 2g.35gb
+            position: 4
+            size: 2
+          - name: 1g.18gb
+            position: 6
+            size: 1
+          - name: 1g.18gb
+            position: 7
+            size: 1
+      - devices: ["5"]
+        mig-enabled: true
+        mig-devices:
+          - name: 3g.71gb
+            position: 0
+            size: 4
+          - name: 2g.35gb
+            position: 4
+            size: 2
+          - name: 1g.18gb
+            position: 6
+            size: 1
+          - name: 1g.18gb
+            position: 7
+            size: 1
+      - devices: ["6"]
+        mig-enabled: true
+        mig-devices:
+          - name: 3g.71gb
+            position: 0
+            size: 4
+          - name: 2g.35gb
+            position: 4
+            size: 2
+          - name: 1g.18gb
+            position: 6
+            size: 1
+          - name: 1g.18gb
+            position: 7
+            size: 1
+      - devices: ["7"]
+        mig-enabled: true
+        mig-devices:
+          - name: 3g.71gb
+            position: 0
+            size: 4
+          - name: 2g.35gb
+            position: 4
+            size: 2
+          - name: 1g.18gb
+            position: 6
+            size: 1
+          - name: 1g.18gb
+            position: 7
+            size: 1
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gpu-node-labeler
+  namespace: gpu-operator
+spec:
+  backoffLimit: 4
+  template:
+    spec:
+      serviceAccountName: gpu-node-labeler
+      restartPolicy: OnFailure
+      volumes:
+        - name: mig-config
+          configMap:
+            name: mig-config
+      containers:
+        - name: labeler
+          image: registry.redhat.io/openshift4/ose-cli:latest
+          volumeMounts:
+            - name: mig-config
+              mountPath: /config
+          command:
+            - /bin/bash
+            - -c
+            - |
+              MIG_CONFIG=$(cat /config/mig.config)
+              for node in $(oc get nodes -l node-role.kubernetes.io/worker --no-headers -o name); do
+                echo "Labeling $node"
+                oc label "$node" run.ai/simulated-gpu-node-pool=default --overwrite
+                oc label "$node" node-role.kubernetes.io/runai-dynamic-mig=true --overwrite
+                oc annotate "$node" "run.ai/mig.config=${MIG_CONFIG}" --overwrite
+              done
