@@ -1,6 +1,6 @@
 ---
 resources:
-  - rhoai.yaml
+  # - rhoai.yaml
   - gpu-operator
   - namespace-gpu-booking-app-plugin.yaml
 
