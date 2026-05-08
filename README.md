@@ -42,7 +42,7 @@ ACM distributes resources to spoke clusters via Policy + Placement. See `acm/` f
 
 See `content/` for the Antora-based workshop materials, or run `make` to build the docs site.
 
-## Supported GPU Operators
+## Supported GPUs
 
 Builtin GPU profiles with the fake-gpu-operator.
 
