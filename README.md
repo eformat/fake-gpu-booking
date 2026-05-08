@@ -41,3 +41,37 @@ ACM distributes resources to spoke clusters via Policy + Placement. See `acm/` f
 ## Workshop
 
 See `content/` for the Antora-based workshop materials, or run `make` to build the docs site.
+
+## Supported GPU Operators
+
+Builtin profiles GPU Profiles with the fake spu operator.
+
+┌─────────┬───────────────────────┬───────────────┬─────┬──────────────┐
+│ Profile │       GPU Name        │    Memory     │ MIG │ Architecture │
+├─────────┼───────────────────────┼───────────────┼─────┼──────────────┤
+│ a100    │ NVIDIA A100-SXM4-40GB │ 40 GiB HBM2e  │ Yes │ Ampere       │
+├─────────┼───────────────────────┼───────────────┼─────┼──────────────┤
+│ h100    │ NVIDIA H100 80GB HBM3 │ 80 GiB HBM3   │ Yes │ Hopper       │
+├─────────┼───────────────────────┼───────────────┼─────┼──────────────┤
+│ b200    │ NVIDIA B200           │ 192 GiB HBM3e │ Yes │ Blackwell    │
+├─────────┼───────────────────────┼───────────────┼─────┼──────────────┤
+│ gb200   │ NVIDIA GB200 NVL      │ 192 GiB HBM3e │ Yes │ Blackwell    │
+├─────────┼───────────────────────┼───────────────┼─────┼──────────────┤
+│ l40s    │ NVIDIA L40S           │ 48 GiB GDDR6  │ No  │ Ada Lovelace │
+├─────────┼───────────────────────┼───────────────┼─────┼──────────────┤
+│ t4      │ NVIDIA T4             │ 16 GiB GDDR6  │ No  │ Turing       │
+└─────────┴───────────────────────┴───────────────┴─────┴──────────────┘
+
+MIG support.
+
+┌───────────────┬──────────────────────────────────────────────────────────────────┐
+│     Match     │                              Slices                              │
+├───────────────┼──────────────────────────────────────────────────────────────────┤
+│ *40GB* (A100) │ 1g.5gb, 1g.5gb+me, 1g.10gb, 2g.10gb, 3g.20gb, 4g.20gb, 7g.40gb   │
+├───────────────┼──────────────────────────────────────────────────────────────────┤
+│ *80GB* (H100) │ 1g.10gb, 1g.10gb+me, 1g.20gb, 2g.20gb, 3g.40gb, 4g.40gb, 7g.80gb │
+├───────────────┼──────────────────────────────────────────────────────────────────┤
+│ *H200*        │ 1g.18gb, 2g.35gb, 3g.71gb                                        │
+└───────────────┴──────────────────────────────────────────────────────────────────┘
+
+These can be expanded by changes to the fake-gpu-operator codebase.
