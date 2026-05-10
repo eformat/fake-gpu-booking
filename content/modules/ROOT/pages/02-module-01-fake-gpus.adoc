@@ -37,7 +37,9 @@ The operator runs three main components on each labeled node:
 | Injects a fake `nvidia-smi` binary into GPU pods so they see simulated GPU info
 |===
 
-Nodes are included in the simulation when labeled with `run.ai/simulated-gpu-node-pool=<pool-name>`. The operator reads topology configuration from its Helm values to determine GPU product, count, and memory per node pool.
+Nodes are included in the simulation when labeled with `run.ai/simulated-gpu-node-pool=<pool-name>`. The operator reads topology configuration from the `topology` ConfigMap to determine GPU product, count, and memory per node pool.
+
+TIP: Use the **GPU Config Plugin** in the OpenShift Console (**GPU Configuration > GPU Profiles**) to switch between GPU profiles (A100, H100, H200, B200, GB200, L40S, T4) and configure MIG slice counts -- no CLI required.
 
 == Exercise 1: Inspect the GPU topology
 
@@ -54,15 +56,11 @@ oc get nodes -l nvidia.com/gpu.present=true --show-labels | grep -o 'nvidia[^ ]*
 [.copypaste]
 [source,bash]
 ----
-oc get nodes -l nvidia.com/gpu.present=true -o custom-columns=\
-NAME:.metadata.name,\
-GPU:.status.capacity.nvidia\\.com/gpu,\
-MIG-1g:.status.capacity.nvidia\\.com/mig-1g\\.18gb,\
-MIG-2g:.status.capacity.nvidia\\.com/mig-2g\\.35gb,\
-MIG-3g:.status.capacity.nvidia\\.com/mig-3g\\.71gb
+oc get node -l nvidia.com/gpu.present=true \
+  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.metadata.labels.nvidia\.com/gpu\.product}{"\t"}gpu={.status.capacity.nvidia\.com/gpu}{"\n"}{end}'
 ----
 +
-You should see 8 full GPUs, 16 MIG-1g, 8 MIG-2g, and 8 MIG-3g devices.
+You should see the active GPU profile name and 8 full GPUs. MIG resources depend on the selected profile.
 
 . Inspect the fake-gpu-operator pods:
 +
@@ -75,7 +73,7 @@ oc get pods -n fake-gpu-operator
 === Verify
 
 &#10003; Nodes report `nvidia.com/gpu` capacity +
-&#10003; MIG partition counts match the topology (16/8/8) +
+&#10003; GPU product label matches the active profile +
 &#10003; Fake GPU operator pods are running
 
 == Exercise 2: Deploy a pod with fake GPUs
@@ -111,7 +109,7 @@ oc -n {user} wait pod/gpu-test --for=condition=Ready --timeout=60s
 oc -n {user} exec gpu-test -- nvidia-smi
 ----
 +
-You should see simulated NVIDIA H200 GPU information -- product name, memory, and utilization -- even though no real GPU exists.
+You should see simulated NVIDIA GPU information for the active profile -- product name, memory, and utilization -- even though no real GPU exists.
 
 . Check the GPU resource usage on the node:
 +
@@ -153,7 +151,9 @@ oc -n {user} wait pod/mig-test --for=condition=Ready --timeout=60s
 oc -n {user} exec mig-test -- nvidia-smi
 ----
 +
-Notice the nvidia-smi output shows the MIG partition size (18 GB) rather than the full H200 memory.
+Notice the nvidia-smi output shows the MIG partition size rather than the full GPU memory.
++
+NOTE: MIG resource types vary by GPU profile. If your cluster is running a non-MIG profile (L40S, T4), skip this exercise or first switch to a MIG-capable profile using the GPU Config Plugin.
 
 . Clean up both test pods:
 +
@@ -174,7 +174,7 @@ oc -n {user} delete pod gpu-test mig-test
 **What you accomplished:**
 
 * Explored the fake-gpu-operator components and how they simulate GPU hardware
-* Inspected the GPU topology: 8 H200 GPUs with MIG partitions (3g.71gb, 2g.35gb, 1g.18gb)
+* Inspected the GPU topology and verified the active GPU profile
 * Deployed pods requesting full GPUs and MIG partitions
 * Verified nvidia-smi emulation inside fake GPU pods
 
@@ -183,6 +183,7 @@ oc -n {user} delete pod gpu-test mig-test
 * The fake-gpu-operator provides a complete GPU simulation layer -- device plugin, metrics, and nvidia-smi
 * Pods request fake GPUs using the same resource names as real GPUs (`nvidia.com/gpu`, `nvidia.com/mig-*`)
 * MIG partitions allow multiple workloads to share a single GPU with isolated memory
+* The GPU Config Plugin lets you switch GPU profiles and MIG configurations from the console UI
 * This simulation approach lets you build and test GPU scheduling workflows without hardware cost
 
 **Next:** Module 2 covers the GPU Booking App -- a console plugin for reserving GPU time slots.

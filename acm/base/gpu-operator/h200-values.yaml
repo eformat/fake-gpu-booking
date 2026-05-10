@@ -10,11 +10,18 @@ topology:
   # will be assigned to the "default" node pool.
   nodePools:
     default:
-      gpuProduct: NVIDIA-L40S
+      gpuProduct: NVIDIA-H200
       gpuCount: 8
-      gpuMemory: 49152
+      gpuMemory: 143771
+      otherDevices:
+        - name: nvidia.com/mig-1g.18gb
+          count: 16
+        - name: nvidia.com/mig-2g.35gb
+          count: 8
+        - name: nvidia.com/mig-3g.71gb
+          count: 8
   nodePoolLabelKey: run.ai/simulated-gpu-node-pool
-  migStrategy: none
+  migStrategy: mixed
 
 devicePlugin:
   image:
@@ -22,7 +29,7 @@ devicePlugin:
     tag: latest
 
 migFaker:
-  enabled: false
+  enabled: true
   image:
     repository: quay.io/eformat/fake-gpu-operator-mig-faker
     tag: latest

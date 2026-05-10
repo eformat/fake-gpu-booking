@@ -52,6 +52,15 @@ rhoai/                           # RHOAI/ODH kustomize overlays
     base/                        # Active overlay (used by ArgoCD + pre-rendered for ACM)
     nightly-34/                  # Nightly build overlay
 
+console-plugin/                  # GPU Config console plugin (React + Go)
+  cmd/backend/main.go            # Go entry point (TLS, routing)
+  pkg/api/                       # HTTP handlers (profiles, deploy, auth)
+  pkg/kube/                      # K8s client (label nodes, patch CMs, restart workloads)
+  src/components/                # React components (ProfileCard, MigConfigPanel, StatusPanel, etc.)
+  src/utils/                     # API client, hooks, types
+  chart/                         # Helm chart (ConsolePlugin CR, Deployment, RBAC)
+  Containerfile                  # 3-stage build (nodejs-22 / go-toolset:1.25 / ubi-minimal)
+
 olm/                             # OLM operator wrapper charts
 workloads/                       # GPU test workload chart
 content/                         # Antora workshop docs
@@ -118,8 +127,52 @@ Note: The fake-gpu-operator OCI chart (`ghcr.io/run-ai`) requires authentication
 
 ## GPU resources simulated
 
-Per worker node:
-- 8x NVIDIA H200 full GPUs (`nvidia.com/gpu`)
-- 8x MIG 3g.71gb slices (`nvidia.com/mig-3g.71gb`)
-- 8x MIG 2g.35gb slices (`nvidia.com/mig-2g.35gb`)
-- 16x MIG 1g.18gb slices (`nvidia.com/mig-1g.18gb`)
+Per worker node (configurable via gpu-config-plugin or values files):
+- 8x NVIDIA full GPUs (`nvidia.com/gpu`)
+- MIG slices vary by GPU profile (see below)
+
+### Supported GPU profiles
+
+| Profile | GPU Name | Memory | MIG | Architecture |
+|---------|----------|--------|-----|--------------|
+| a100 | NVIDIA A100-SXM4-40GB | 40 GiB HBM2e | Yes | Ampere |
+| h100 | NVIDIA H100 80GB HBM3 | 80 GiB HBM3 | Yes | Hopper |
+| h200 | NVIDIA H200 | 141 GiB HBM3e | Yes | Hopper |
+| b200 | NVIDIA B200 | 192 GiB HBM3e | Yes | Blackwell |
+| gb200 | NVIDIA GB200 NVL | 192 GiB HBM3e | Yes | Blackwell |
+| l40s | NVIDIA L40S | 48 GiB GDDR6 | No | Ada Lovelace |
+| t4 | NVIDIA T4 | 16 GiB GDDR6 | No | Turing |
+
+### MIG slice families (from fake-gpu-operator)
+
+- **\*40GB\*** (A100): 1g.5gb, 1g.5gb+me, 1g.10gb, 2g.10gb, 3g.20gb, 4g.20gb, 7g.40gb
+- **\*80GB\*** (H100): 1g.10gb, 1g.10gb+me, 1g.20gb, 2g.20gb, 3g.40gb, 4g.40gb, 7g.80gb
+- **\*H200\***: 1g.18gb, 2g.35gb, 3g.71gb
+
+## GPU config plugin
+
+The `console-plugin/` directory contains an OpenShift console plugin for selecting and deploying GPU profiles. Tech stack: React 17 + PatternFly v6 + Go 1.25 + gorilla/mux.
+
+### How it works
+
+1. User selects a builtin GPU profile (or enters a custom product name)
+2. For MIG-capable profiles, user configures slice counts
+3. Backend deploys the configuration in 4 steps:
+   - Persists selection to ConfigMap `gpu-config-selected` in gpu-operator namespace
+   - Updates the `topology` ConfigMap with new GPU product/count/memory/MIG config
+   - Labels worker nodes (`run.ai/simulated-gpu-node-pool`, MIG labels/annotations)
+   - Deletes per-node topology ConfigMaps and restarts operator workloads
+4. The fake-gpu-operator picks up the new topology and registers GPU resources on nodes
+
+### Build and deploy
+
+```bash
+cd console-plugin
+podman build -t quay.io/eformat/gpu-config-plugin:latest -f Containerfile .
+podman push quay.io/eformat/gpu-config-plugin:latest
+helm install gpu-config-plugin chart/ -n gpu-config-plugin --create-namespace
+```
+
+### Key constraint: ACM conflict
+
+If the fake-gpu-operator topology ConfigMap is managed by an ACM ConfigurationPolicy, ACM will revert changes made by the config plugin. Either disable the ACM policy for the topology ConfigMap, or deploy the config plugin standalone without ACM managing the operator resources.

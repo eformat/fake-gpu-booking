@@ -1,0 +1,29 @@
+[
+  {
+    "type": "console.navigation/section",
+    "properties": {
+      "id": "gpu-config",
+      "name": "GPU Configuration"
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/gpu-config",
+      "component": {
+        "$codeRef": "GpuConfigPage"
+      }
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "gpu-config-profiles",
+      "name": "GPU Profiles",
+      "href": "/gpu-config",
+      "perspective": "admin",
+      "section": "gpu-config"
+    }
+  }
+]

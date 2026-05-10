@@ -36,7 +36,26 @@ ACM distributes resources to spoke clusters via Policy + Placement. See `acm/` f
 | gpu-rbac | Local Helm chart | RBAC, Kueue queues, hardware profiles |
 | nfd | Local Helm chart | Node Feature Discovery operator |
 | gpu-booking-plugin | Helm repo (`eformat`) | OpenShift console plugin for GPU booking |
+| gpu-config-plugin | Local (`console-plugin/`) | OpenShift console plugin for GPU profile selection |
 | rhoai | Kustomize | Red Hat OpenShift AI / ODH configuration |
+
+## GPU Config Plugin
+
+The `console-plugin/` directory contains an OpenShift console plugin that provides a UI for selecting GPU profiles and deploying them to the cluster.
+
+Features:
+- Select from 7 builtin GPU profiles (A100, H100, H200, B200, GB200, L40S, T4)
+- Configure MIG slice counts per node for MIG-capable GPUs
+- Custom/legacy mode for arbitrary GPU product names
+- Deploys configuration by updating the topology ConfigMap, labeling nodes, and restarting operator workloads
+- Status panel showing node readiness, DaemonSet health, and current active profile
+
+```bash
+cd console-plugin
+podman build -t quay.io/eformat/gpu-config-plugin:latest -f Containerfile .
+podman push quay.io/eformat/gpu-config-plugin:latest
+helm install gpu-config-plugin chart/ -n gpu-config-plugin --create-namespace
+```
 
 ## Workshop
 
