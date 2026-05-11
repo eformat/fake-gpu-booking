@@ -72,7 +72,7 @@ const CustomProfileForm: React.FC<Props> = ({ config, onChange }) => {
 
   return (
     <Card>
-      <CardTitle>Custom GPU Profile (Legacy Topology)</CardTitle>
+      <CardTitle>Custom GPU Profile</CardTitle>
       <CardBody>
         <FormGroup label="GPU Product Name" fieldId="gpu-product" isRequired>
           <Select

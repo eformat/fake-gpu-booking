@@ -123,7 +123,7 @@ const GpuConfigPage: React.FC = () => {
                 ))}
               </Gallery>
             </Tab>
-            <Tab eventKey="custom" title={<TabTitleText>Custom (Legacy)</TabTitleText>}>
+            <Tab eventKey="custom" title={<TabTitleText>Custom</TabTitleText>}>
               <div style={{ marginTop: '1rem', maxWidth: '600px' }}>
                 <CustomProfileForm config={customConfig} onChange={setCustomConfig} />
               </div>

@@ -16,6 +16,8 @@ interface Props {
 }
 
 const ProfileCard: React.FC<Props> = ({ profile, isActive, isSelected, isAdmin, onSelect }) => {
+  const migGpuCount = profile.migSlices && profile.migSlices.length > 0 ? profile.gpuCount : 0;
+
   return (
     <Card
       onClick={onSelect}
@@ -41,9 +43,15 @@ const ProfileCard: React.FC<Props> = ({ profile, isActive, isSelected, isAdmin, 
             <DescriptionListDescription>{profile.memory}</DescriptionListDescription>
           </DescriptionListGroup>
           <DescriptionListGroup>
-            <DescriptionListTerm>GPUs per node</DescriptionListTerm>
+            <DescriptionListTerm>Full GPUs</DescriptionListTerm>
             <DescriptionListDescription>{profile.gpuCount}</DescriptionListDescription>
           </DescriptionListGroup>
+          {migGpuCount > 0 && (
+            <DescriptionListGroup>
+              <DescriptionListTerm>MIG GPUs</DescriptionListTerm>
+              <DescriptionListDescription>{migGpuCount}</DescriptionListDescription>
+            </DescriptionListGroup>
+          )}
           <DescriptionListGroup>
             <DescriptionListTerm>MIG Support</DescriptionListTerm>
             <DescriptionListDescription>

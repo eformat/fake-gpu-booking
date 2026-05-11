@@ -15,3 +15,4 @@ acm/base/charts/fake-gpu-operator-*/
 acm/base/gpu-operator/charts/
 
 WORKSHOP_OUTLINE.md
+.vscode/
