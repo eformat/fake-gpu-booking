@@ -19,6 +19,7 @@ service:
   port: 9443
 
 gpuOperatorNamespace: gpu-operator
+bookingPluginNamespace: gpu-booking-app-plugin
 
 resources:
   requests:

@@ -11,6 +11,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
@@ -18,11 +19,13 @@ import (
 )
 
 type Client struct {
-	clientset *kubernetes.Clientset
-	namespace string
+	clientset     *kubernetes.Clientset
+	dynamicClient dynamic.Interface
+	namespace     string
+	bookingNS     string
 }
 
-func NewClient(namespace string) (*Client, error) {
+func NewClient(namespace, bookingNS string) (*Client, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, fmt.Errorf("in-cluster config: %w", err)
@@ -31,7 +34,11 @@ func NewClient(namespace string) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("clientset: %w", err)
 	}
-	return &Client{clientset: cs, namespace: namespace}, nil
+	dynClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("dynamic client: %w", err)
+	}
+	return &Client{clientset: cs, dynamicClient: dynClient, namespace: namespace, bookingNS: bookingNS}, nil
 }
 
 type DeployRequest struct {
@@ -84,6 +91,8 @@ func (c *Client) Deploy(ctx context.Context, req *DeployRequest) *DeployResult {
 	result.Steps = append(result.Steps, c.updateTopology(ctx, req))
 	result.Steps = append(result.Steps, c.labelNodes(ctx, req))
 	result.Steps = append(result.Steps, c.restartWorkloads(ctx))
+	result.Steps = append(result.Steps, c.updateKueueResources(ctx, req))
+	result.Steps = append(result.Steps, c.restartBookingPlugin(ctx))
 
 	return result
 }

@@ -1,4 +1,6 @@
 ---
+dynamicGpuConfig: true
+
 reservations:
   h200: {}
 

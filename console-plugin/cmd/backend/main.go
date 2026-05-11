@@ -20,6 +20,7 @@ func main() {
 	port := envOr("PORT", "9443")
 	distDir := envOr("PLUGIN_DIST_DIR", "./dist")
 	gpuNS := envOr("GPU_OPERATOR_NAMESPACE", "gpu-operator")
+	bookingNS := envOr("BOOKING_PLUGIN_NAMESPACE", "gpu-booking-app-plugin")
 	certFile := envOr("TLS_CERT_FILE", "/var/serving-cert/tls.crt")
 	keyFile := envOr("TLS_KEY_FILE", "/var/serving-cert/tls.key")
 
@@ -28,7 +29,7 @@ func main() {
 		slog.Warn("DEV_MODE enabled — anonymous admin access granted")
 	}
 
-	client, err := kube.NewClient(gpuNS)
+	client, err := kube.NewClient(gpuNS, bookingNS)
 	if err != nil {
 		slog.Warn("k8s client not available", "error", err)
 	}
