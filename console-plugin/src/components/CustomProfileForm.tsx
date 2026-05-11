@@ -14,6 +14,7 @@ export interface CustomConfig {
 
 interface Props {
   config: CustomConfig;
+  migAvailable: boolean;
   onChange: (config: CustomConfig) => void;
 }
 
@@ -36,7 +37,7 @@ const COMMON_PRODUCTS = [
   'NVIDIA-A30',
 ];
 
-const CustomProfileForm: React.FC<Props> = ({ config, onChange }) => {
+const CustomProfileForm: React.FC<Props> = ({ config, migAvailable, onChange }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [filterValue, setFilterValue] = React.useState('');
 
@@ -119,14 +120,16 @@ const CustomProfileForm: React.FC<Props> = ({ config, onChange }) => {
             }}
           />
         </FormGroup>
-        <FormGroup fieldId="mig-toggle" style={{ marginTop: '0.5rem' }}>
-          <Switch
-            id="mig-toggle"
-            label="MIG Enabled"
-            isChecked={config.migEnabled}
-            onChange={(_event, checked) => onChange({ ...config, migEnabled: checked })}
-          />
-        </FormGroup>
+        {migAvailable && (
+          <FormGroup fieldId="mig-toggle" style={{ marginTop: '0.5rem' }}>
+            <Switch
+              id="mig-toggle"
+              label="MIG Enabled"
+              isChecked={config.migEnabled}
+              onChange={(_event, checked) => onChange({ ...config, migEnabled: checked })}
+            />
+          </FormGroup>
+        )}
       </CardBody>
     </Card>
   );

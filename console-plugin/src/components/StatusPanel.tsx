@@ -48,7 +48,7 @@ const StatusPanel: React.FC<Props> = ({ status, currentConfig }) => {
             <DescriptionListGroup>
               <DescriptionListTerm>Deployments</DescriptionListTerm>
               <DescriptionListDescription>
-                {status.deployments.map((d) => (
+                {status.deployments.filter((d) => d.desired > 0).map((d) => (
                   <div key={d.name}>
                     {d.ready === d.desired ? (
                       <CheckCircleIcon color="green" />

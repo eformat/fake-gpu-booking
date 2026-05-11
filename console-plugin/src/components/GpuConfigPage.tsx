@@ -38,6 +38,22 @@ const GpuConfigPage: React.FC = () => {
     ? migFamilies.find((f) => f.id === selectedProfile.migFamily) || null
     : null;
 
+  const customMigFamily = React.useMemo(() => {
+    const product = customConfig.gpuProduct.toUpperCase();
+    if (product.includes('H200')) return migFamilies.find((f) => f.id === 'h200') || null;
+    if (product.includes('80GB') || product.includes('H100') || product.includes('B200') || product.includes('GB200')) return migFamilies.find((f) => f.id === '80gb') || null;
+    if (product.includes('40GB') || product.includes('A100')) return migFamilies.find((f) => f.id === '40gb') || null;
+    return null;
+  }, [customConfig.gpuProduct, migFamilies]);
+
+  const customMigAvailable = customMigFamily !== null;
+
+  React.useEffect(() => {
+    if (!customMigAvailable && customConfig.migEnabled) {
+      setCustomConfig((prev) => ({ ...prev, migEnabled: false }));
+    }
+  }, [customMigAvailable]);
+
   React.useEffect(() => {
     if (selectedProfile?.migSlices) {
       setMigSlices([...selectedProfile.migSlices]);
@@ -45,6 +61,19 @@ const GpuConfigPage: React.FC = () => {
       setMigSlices([]);
     }
   }, [selectedProfileId]);
+
+  React.useEffect(() => {
+    if (activeTab === 'custom' && customConfig.migEnabled && customMigFamily) {
+      const matchingProfile = profiles.find((p) => p.migFamily === customMigFamily.id && p.migSlices && p.migSlices.length > 0);
+      if (matchingProfile?.migSlices) {
+        setMigSlices([...matchingProfile.migSlices]);
+      } else {
+        setMigSlices(customMigFamily.slices.map((s) => ({ name: `nvidia.com/mig-${s}`, count: 8 })));
+      }
+    } else if (activeTab === 'custom' && !customConfig.migEnabled) {
+      setMigSlices([]);
+    }
+  }, [customConfig.migEnabled, customMigFamily, activeTab]);
 
   const handleDeploy = () => {
     let req: DeployRequest;
@@ -64,7 +93,7 @@ const GpuConfigPage: React.FC = () => {
         gpuCount: customConfig.gpuCount,
         gpuMemory: customConfig.gpuMemory,
         migStrategy: customConfig.migEnabled ? 'mixed' : 'none',
-        migSlices: [],
+        migSlices: customConfig.migEnabled ? migSlices.filter((s) => s.count > 0) : [],
       };
     }
     setDeployRequest(req);
@@ -125,7 +154,7 @@ const GpuConfigPage: React.FC = () => {
             </Tab>
             <Tab eventKey="custom" title={<TabTitleText>Custom</TabTitleText>}>
               <div style={{ marginTop: '1rem', maxWidth: '600px' }}>
-                <CustomProfileForm config={customConfig} onChange={setCustomConfig} />
+                <CustomProfileForm config={customConfig} migAvailable={customMigAvailable} onChange={setCustomConfig} />
               </div>
             </Tab>
           </Tabs>
@@ -135,6 +164,16 @@ const GpuConfigPage: React.FC = () => {
           <PageSection>
             <MigConfigPanel
               migFamily={selectedMigFamily}
+              slices={migSlices}
+              onChange={setMigSlices}
+            />
+          </PageSection>
+        )}
+
+        {activeTab === 'custom' && customConfig.migEnabled && customMigFamily && (
+          <PageSection>
+            <MigConfigPanel
+              migFamily={customMigFamily}
               slices={migSlices}
               onChange={setMigSlices}
             />

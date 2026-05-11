@@ -33,7 +33,7 @@ var MIGFamilies = []MIGFamily{
 		ID:    "40gb",
 		Match: "*40GB* (A100)",
 		Slices: []string{
-			"1g.5gb", "1g.5gb+me", "1g.10gb", "2g.10gb",
+			"1g.5gb", "1g.10gb", "2g.10gb",
 			"3g.20gb", "4g.20gb", "7g.40gb",
 		},
 	},
@@ -41,7 +41,7 @@ var MIGFamilies = []MIGFamily{
 		ID:    "80gb",
 		Match: "*80GB* (H100)",
 		Slices: []string{
-			"1g.10gb", "1g.10gb+me", "1g.20gb", "2g.20gb",
+			"1g.10gb", "1g.20gb", "2g.20gb",
 			"3g.40gb", "4g.40gb", "7g.80gb",
 		},
 	},
