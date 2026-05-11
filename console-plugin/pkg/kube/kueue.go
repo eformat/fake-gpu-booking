@@ -128,37 +128,36 @@ func (c *Client) ensureResourceFlavor(ctx context.Context) error {
 func (c *Client) updateCohort(ctx context.Context, totalCPU, totalMemGi, gpuCount int, migCounts map[string]int) error {
 	resourceGroups := c.buildResourceGroups("gpu-pool", totalCPU, totalMemGi, gpuCount, migCounts)
 
-	patch := map[string]interface{}{
-		"apiVersion": "kueue.x-k8s.io/v1beta1",
-		"kind":       "Cohort",
-		"metadata": map[string]interface{}{
-			"name": "unreserved",
-		},
-		"spec": map[string]interface{}{
-			"resourceGroups": resourceGroups,
-		},
-	}
-
-	data, _ := marshalJSON(patch)
-	_, err := c.dynamicClient.Resource(cohortGVR).Patch(ctx, "unreserved", types.MergePatchType, data, metav1.PatchOptions{})
+	existing, err := c.dynamicClient.Resource(cohortGVR).Get(ctx, "unreserved", metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
-		obj := &unstructured.Unstructured{Object: patch}
+		obj := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "kueue.x-k8s.io/v1beta1",
+				"kind":       "Cohort",
+				"metadata":   map[string]interface{}{"name": "unreserved"},
+				"spec":       map[string]interface{}{"resourceGroups": resourceGroups},
+			},
+		}
 		_, err = c.dynamicClient.Resource(cohortGVR).Create(ctx, obj, metav1.CreateOptions{})
+		return err
 	}
+	if err != nil {
+		return err
+	}
+	unstructured.SetNestedSlice(existing.Object, resourceGroups, "spec", "resourceGroups")
+	_, err = c.dynamicClient.Resource(cohortGVR).Update(ctx, existing, metav1.UpdateOptions{})
 	return err
 }
 
 func (c *Client) updateClusterQueue(ctx context.Context, name string, gpuCount int, migCounts map[string]int) error {
 	resourceGroups := c.buildResourceGroups("gpu-pool", 0, 0, 0, zeroedMigCounts(migCounts))
 
-	patch := map[string]interface{}{
-		"spec": map[string]interface{}{
-			"resourceGroups": resourceGroups,
-		},
+	existing, err := c.dynamicClient.Resource(clusterQueueGVR).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return err
 	}
-
-	data, _ := marshalJSON(patch)
-	_, err := c.dynamicClient.Resource(clusterQueueGVR).Patch(ctx, name, types.MergePatchType, data, metav1.PatchOptions{})
+	unstructured.SetNestedSlice(existing.Object, resourceGroups, "spec", "resourceGroups")
+	_, err = c.dynamicClient.Resource(clusterQueueGVR).Update(ctx, existing, metav1.UpdateOptions{})
 	return err
 }
 
