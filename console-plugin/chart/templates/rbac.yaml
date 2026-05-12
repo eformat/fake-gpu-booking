@@ -126,7 +126,7 @@ metadata:
   name: {{ .Values.plugin.name }}-hardware-profiles
   namespace: redhat-ods-applications
 rules:
-  - apiGroups: ["dashboard.opendatahub.io"]
+  - apiGroups: ["infrastructure.opendatahub.io"]
     resources: ["hardwareprofiles"]
     verbs: ["get", "list", "create", "update", "patch", "delete"]
 ---

@@ -18,16 +18,16 @@ import (
 
 var (
 	cohortGVR = schema.GroupVersionResource{
-		Group: "kueue.x-k8s.io", Version: "v1beta1", Resource: "cohorts",
+		Group: "kueue.x-k8s.io", Version: "v1beta2", Resource: "cohorts",
 	}
 	clusterQueueGVR = schema.GroupVersionResource{
-		Group: "kueue.x-k8s.io", Version: "v1beta1", Resource: "clusterqueues",
+		Group: "kueue.x-k8s.io", Version: "v1beta2", Resource: "clusterqueues",
 	}
 	resourceFlavorGVR = schema.GroupVersionResource{
-		Group: "kueue.x-k8s.io", Version: "v1beta1", Resource: "resourceflavors",
+		Group: "kueue.x-k8s.io", Version: "v1beta2", Resource: "resourceflavors",
 	}
 	hardwareProfileGVR = schema.GroupVersionResource{
-		Group: "dashboard.opendatahub.io", Version: "v1", Resource: "hardwareprofiles",
+		Group: "infrastructure.opendatahub.io", Version: "v1", Resource: "hardwareprofiles",
 	}
 )
 
@@ -56,6 +56,10 @@ func (c *Client) updateKueueResources(ctx context.Context, req *DeployRequest) S
 
 	if err := c.ensureResourceFlavor(ctx); err != nil {
 		errors = append(errors, fmt.Sprintf("resourceflavor: %v", err))
+	}
+
+	if err := c.deleteStaleResourceFlavors(ctx); err != nil {
+		errors = append(errors, fmt.Sprintf("cleanup-flavors: %v", err))
 	}
 
 	if err := c.updateCohort(ctx, totalCPU, totalMemGi, gpuCount, migCounts); err != nil {
@@ -107,7 +111,7 @@ func (c *Client) getWorkerNodeCount(ctx context.Context) (int, error) {
 func (c *Client) ensureResourceFlavor(ctx context.Context) error {
 	flavor := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion": "kueue.x-k8s.io/v1beta1",
+			"apiVersion": "kueue.x-k8s.io/v1beta2",
 			"kind":       "ResourceFlavor",
 			"metadata": map[string]interface{}{
 				"name": "gpu-pool",
@@ -115,7 +119,11 @@ func (c *Client) ensureResourceFlavor(ctx context.Context) error {
 					managedLabel: "true",
 				},
 			},
-			"spec": map[string]interface{}{},
+			"spec": map[string]interface{}{
+				"nodeLabels": map[string]interface{}{
+					"run.ai/simulated-gpu-node-pool": "default",
+				},
+			},
 		},
 	}
 	_, err := c.dynamicClient.Resource(resourceFlavorGVR).Get(ctx, "gpu-pool", metav1.GetOptions{})
@@ -132,7 +140,7 @@ func (c *Client) updateCohort(ctx context.Context, totalCPU, totalMemGi, gpuCoun
 	if apierrors.IsNotFound(err) {
 		obj := &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "kueue.x-k8s.io/v1beta1",
+				"apiVersion": "kueue.x-k8s.io/v1beta2",
 				"kind":       "Cohort",
 				"metadata":   map[string]interface{}{"name": "unreserved"},
 				"spec":       map[string]interface{}{"resourceGroups": resourceGroups},
@@ -216,13 +224,18 @@ func (c *Client) updateHardwareProfiles(ctx context.Context, req *DeployRequest,
 	}
 	for migName, count := range migCounts {
 		normalized := strings.TrimPrefix(migName, "nvidia.com/mig-")
+		// Strip "Xg." prefix to get just the memory part (e.g., "1g.18gb" → "18gb")
+		shortName := normalized
+		if idx := strings.Index(normalized, "."); idx >= 0 {
+			shortName = normalized[idx+1:]
+		}
 		profiles = append(profiles, struct {
 			name        string
 			displayName string
 			identifier  string
 			maxCount    int
 		}{
-			name:        fmt.Sprintf("unreserved-mig-%s", strings.ReplaceAll(normalized, ".", "-")),
+			name:        fmt.Sprintf("unreserved-mig-%s", shortName),
 			displayName: fmt.Sprintf("Unreserved MIG %s", normalized),
 			identifier:  migName,
 			maxCount:    count,
@@ -232,7 +245,7 @@ func (c *Client) updateHardwareProfiles(ctx context.Context, req *DeployRequest,
 	for _, p := range profiles {
 		hp := &unstructured.Unstructured{
 			Object: map[string]interface{}{
-				"apiVersion": "dashboard.opendatahub.io/v1",
+				"apiVersion": "infrastructure.opendatahub.io/v1",
 				"kind":       "HardwareProfile",
 				"metadata": map[string]interface{}{
 					"name":      p.name,
@@ -242,25 +255,34 @@ func (c *Client) updateHardwareProfiles(ctx context.Context, req *DeployRequest,
 					},
 				},
 				"spec": map[string]interface{}{
-					"displayName": p.displayName,
-					"description": fmt.Sprintf("GPU resource: %s (max %d)", p.identifier, p.maxCount),
-					"enabled":     true,
 					"identifiers": []interface{}{
 						map[string]interface{}{
-							"displayName": p.displayName,
-							"identifier":  p.identifier,
-							"maxCount":    int64(p.maxCount),
-							"minCount":    int64(1),
+							"displayName":  p.displayName,
+							"identifier":   p.identifier,
+							"defaultCount": int64(1),
+							"maxCount":     int64(p.maxCount),
+							"minCount":     int64(1),
 						},
 					},
-					"nodeSelectors": []interface{}{},
-					"tolerations":   []interface{}{},
+					"scheduling": map[string]interface{}{
+						"type": "Queue",
+						"kueue": map[string]interface{}{
+							"localQueueName": "unreserved",
+							"priorityClass":  "None",
+						},
+					},
 				},
 			},
 		}
 		_, err := c.dynamicClient.Resource(hardwareProfileGVR).Namespace("redhat-ods-applications").Create(ctx, hp, metav1.CreateOptions{})
 		if apierrors.IsAlreadyExists(err) {
-			_, err = c.dynamicClient.Resource(hardwareProfileGVR).Namespace("redhat-ods-applications").Update(ctx, hp, metav1.UpdateOptions{})
+			existing, getErr := c.dynamicClient.Resource(hardwareProfileGVR).Namespace("redhat-ods-applications").Get(ctx, p.name, metav1.GetOptions{})
+			if getErr == nil {
+				hp.SetResourceVersion(existing.GetResourceVersion())
+				_, err = c.dynamicClient.Resource(hardwareProfileGVR).Namespace("redhat-ods-applications").Update(ctx, hp, metav1.UpdateOptions{})
+			} else {
+				err = getErr
+			}
 		}
 		if err != nil {
 			slog.Error("hardware profile create/update failed", "name", p.name, "error", err)
@@ -269,22 +291,66 @@ func (c *Client) updateHardwareProfiles(ctx context.Context, req *DeployRequest,
 	return nil
 }
 
-func (c *Client) restartBookingPlugin(ctx context.Context) StepResult {
-	if c.bookingNS == "" {
-		return StepResult{Step: "restart-booking", Status: "ok", Message: "skipped (no booking namespace)"}
+func (c *Client) scaleBookingPlugin(ctx context.Context, replicas int32) StepResult {
+	action := "scale-up-booking"
+	if replicas == 0 {
+		action = "scale-down-booking"
 	}
-	restartAnnotation := fmt.Sprintf(
-		`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`,
-		time.Now().Format(time.RFC3339),
-	)
+	if c.bookingNS == "" {
+		return StepResult{Step: action, Status: "ok", Message: "skipped"}
+	}
+	patch := fmt.Sprintf(`{"spec":{"replicas":%d}}`, replicas)
 	_, err := c.clientset.AppsV1().Deployments(c.bookingNS).Patch(
 		ctx, "gpu-booking-plugin", types.StrategicMergePatchType,
-		[]byte(restartAnnotation), metav1.PatchOptions{},
+		[]byte(patch), metav1.PatchOptions{},
 	)
 	if err != nil && !apierrors.IsNotFound(err) {
-		return StepResult{Step: "restart-booking", Status: "error", Message: err.Error()}
+		return StepResult{Step: action, Status: "error", Message: err.Error()}
 	}
-	return StepResult{Step: "restart-booking", Status: "ok"}
+	if replicas == 0 {
+		for i := 0; i < 15; i++ {
+			time.Sleep(2 * time.Second)
+			pods, listErr := c.clientset.CoreV1().Pods(c.bookingNS).List(ctx, metav1.ListOptions{
+				LabelSelector: "app.kubernetes.io/name=gpu-booking-plugin",
+			})
+			if listErr != nil || len(pods.Items) == 0 {
+				break
+			}
+			allTerminating := true
+			for _, p := range pods.Items {
+				if p.DeletionTimestamp == nil {
+					allTerminating = false
+				}
+			}
+			if allTerminating {
+				break
+			}
+		}
+	}
+	return StepResult{Step: action, Status: "ok"}
+}
+
+func (c *Client) deleteStaleResourceFlavors(ctx context.Context) error {
+	flavors, err := c.dynamicClient.Resource(resourceFlavorGVR).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, f := range flavors.Items {
+		name := f.GetName()
+		if name == "gpu-pool" || name == "default-flavor" {
+			continue
+		}
+		labels := f.GetLabels()
+		spec := f.Object["spec"]
+		specMap, isMap := spec.(map[string]interface{})
+		hasGPUConfig := spec != nil && (!isMap || len(specMap) > 0)
+		isManaged := labels != nil && labels[managedLabel] == "true"
+		if hasGPUConfig || isManaged {
+			slog.Info("deleting stale ResourceFlavor", "name", name)
+			c.dynamicClient.Resource(resourceFlavorGVR).Delete(ctx, name, metav1.DeleteOptions{})
+		}
+	}
+	return nil
 }
 
 func zeroedMigCounts(m map[string]int) map[string]int {
