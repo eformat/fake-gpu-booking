@@ -13,8 +13,8 @@ spec:
     - repoURL: https://github.com/eformat/fake-gpu-booking.git
       targetRevision: main
       ref: values
-    - repoURL: https://github.com/rhai-code/gpu-booking-app-plugin
-      targetRevision: main
+    - repoURL: https://github.com/eformat/gpu-booking-app-plugin
+      targetRevision: dynamic-discovery
       path: chart
       helm:
         valueFiles:
