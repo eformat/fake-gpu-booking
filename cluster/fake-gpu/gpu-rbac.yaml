@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: https://github.com/eformat/fake-gpu-booking.git
     targetRevision: main
-    path: gpu-rbac
+    path: acm/base/charts/gpu-rbac
   syncPolicy:
     automated:
       selfHeal: true

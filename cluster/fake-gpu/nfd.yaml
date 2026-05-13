@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: https://github.com/eformat/fake-gpu-booking.git
     targetRevision: main
-    path: nfd
+    path: acm/base/charts/nfd
   syncPolicy:
     automated:
       selfHeal: true

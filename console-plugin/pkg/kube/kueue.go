@@ -321,43 +321,19 @@ func (c *Client) updateHardwareProfiles(ctx context.Context, req *DeployRequest,
 	return nil
 }
 
-func (c *Client) scaleBookingPlugin(ctx context.Context, replicas int32) StepResult {
-	action := "scale-up-booking"
-	if replicas == 0 {
-		action = "scale-down-booking"
-	}
+func (c *Client) rolloutRestartBookingPlugin(ctx context.Context) StepResult {
 	if c.bookingNS == "" {
-		return StepResult{Step: action, Status: "ok", Message: "skipped"}
+		return StepResult{Step: "restart-booking", Status: "ok", Message: "skipped"}
 	}
-	patch := fmt.Sprintf(`{"spec":{"replicas":%d}}`, replicas)
+	patch := fmt.Sprintf(`{"spec":{"template":{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"%s"}}}}}`, time.Now().Format(time.RFC3339))
 	_, err := c.clientset.AppsV1().Deployments(c.bookingNS).Patch(
 		ctx, "gpu-booking-plugin", types.StrategicMergePatchType,
 		[]byte(patch), metav1.PatchOptions{},
 	)
 	if err != nil && !apierrors.IsNotFound(err) {
-		return StepResult{Step: action, Status: "error", Message: err.Error()}
+		return StepResult{Step: "restart-booking", Status: "error", Message: err.Error()}
 	}
-	if replicas == 0 {
-		for i := 0; i < 15; i++ {
-			time.Sleep(2 * time.Second)
-			pods, listErr := c.clientset.CoreV1().Pods(c.bookingNS).List(ctx, metav1.ListOptions{
-				LabelSelector: "app.kubernetes.io/name=gpu-booking-plugin",
-			})
-			if listErr != nil || len(pods.Items) == 0 {
-				break
-			}
-			allTerminating := true
-			for _, p := range pods.Items {
-				if p.DeletionTimestamp == nil {
-					allTerminating = false
-				}
-			}
-			if allTerminating {
-				break
-			}
-		}
-	}
-	return StepResult{Step: action, Status: "ok"}
+	return StepResult{Step: "restart-booking", Status: "ok"}
 }
 
 func (c *Client) deleteStaleResourceFlavors(ctx context.Context) error {

@@ -90,10 +90,9 @@ func (c *Client) Deploy(ctx context.Context, req *DeployRequest) *DeployResult {
 	result.Steps = append(result.Steps, c.persistSelection(ctx, req))
 	result.Steps = append(result.Steps, c.updateTopology(ctx, req))
 	result.Steps = append(result.Steps, c.labelNodes(ctx, req))
-	result.Steps = append(result.Steps, c.scaleBookingPlugin(ctx, 0))
 	result.Steps = append(result.Steps, c.restartWorkloads(ctx))
 	result.Steps = append(result.Steps, c.updateKueueResources(ctx, req))
-	result.Steps = append(result.Steps, c.scaleBookingPlugin(ctx, 1))
+	result.Steps = append(result.Steps, c.rolloutRestartBookingPlugin(ctx))
 
 	return result
 }
