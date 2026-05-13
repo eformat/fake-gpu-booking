@@ -1,0 +1,16 @@
+{{- if and (ge (int .Values.installPhase) 2) .Values.hardwareProfile.enabled }}
+---
+apiVersion: infrastructure.opendatahub.io/v1
+kind: HardwareProfile
+metadata:
+  annotations:
+    opendatahub.io/dashboard-feature-visibility: '[]'
+    opendatahub.io/disabled: "false"
+    opendatahub.io/display-name: {{ .Values.hardwareProfile.displayName }}
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "2"
+  name: {{ .Values.hardwareProfile.name }}
+  namespace: {{ .Values.hardwareProfile.namespace }}
+spec:
+  {{- .Values.hardwareProfile.spec | toYaml | nindent 2 }}
+{{- end }}

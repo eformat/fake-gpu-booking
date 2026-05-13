@@ -1,0 +1,13 @@
+{{- if and (ge (int .Values.installPhase) 2) .Values.dsc.enabled }}
+---
+apiVersion: datasciencecluster.opendatahub.io/v2
+kind: DataScienceCluster
+metadata:
+  name: default-dsc
+  namespace: {{ .Values.dsc.namespace }}
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  {{- .Values.dsc.spec | toYaml | nindent 2 }}
+{{- end }}

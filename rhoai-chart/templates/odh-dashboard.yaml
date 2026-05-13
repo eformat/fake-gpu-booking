@@ -1,0 +1,16 @@
+{{- if and (ge (int .Values.installPhase) 3) .Values.odhDashboard.enabled }}
+---
+apiVersion: opendatahub.io/v1alpha
+kind: OdhDashboardConfig
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "3"
+  labels:
+    app.kubernetes.io/part-of: rhods-dashboard
+    app.opendatahub.io/rhods-dashboard: "true"
+  name: odh-dashboard-config
+  namespace: {{ .Values.odhDashboard.namespace }}
+spec:
+  {{- .Values.odhDashboard.spec | toYaml | nindent 2 }}
+{{- end }}

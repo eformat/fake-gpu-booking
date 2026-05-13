@@ -1,0 +1,12 @@
+{{- if and (ge (int .Values.installPhase) 3) .Values.mlflow.enabled }}
+---
+apiVersion: mlflow.opendatahub.io/v1
+kind: MLflow
+metadata:
+  name: mlflow
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  {{- .Values.mlflow.spec | toYaml | nindent 2 }}
+{{- end }}

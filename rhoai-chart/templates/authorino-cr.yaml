@@ -1,0 +1,52 @@
+{{- if and (ge (int .Values.installPhase) 2) .Values.authorino.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: {{ .Values.authorino.tls.certSecretName }}
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "2"
+  name: authorino-authorino-authorization
+  namespace: {{ .Values.authorino.namespace }}
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: grpc
+      port: 50051
+      protocol: TCP
+      targetPort: 50051
+    - name: http
+      port: 5001
+      protocol: TCP
+      targetPort: 5001
+  selector:
+    authorino-resource: authorino
+    control-plane: controller-manager
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: operator.authorino.kuadrant.io/v1beta1
+kind: Authorino
+metadata:
+  name: authorino
+  namespace: {{ .Values.authorino.namespace }}
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  replicas: {{ .Values.authorino.replicas }}
+  clusterWide: true
+  listener:
+    tls:
+      enabled: true
+      certSecretRef:
+        name: {{ .Values.authorino.tls.certSecretName }}
+  logLevel: {{ .Values.authorino.logLevel }}
+  oidcServer:
+    tls:
+      enabled: false
+{{- end }}

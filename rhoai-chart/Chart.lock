@@ -1,0 +1,6 @@
+dependencies:
+- name: olm-v0-chart
+  repository: file://../olm/olm-v0-chart
+  version: 1.0.0
+digest: sha256:219ae5013ba73c7743aa342f26168f136c9dbddbbc7ce7e2bbbcc0e6ab3c0b15
+generated: "2026-05-12T17:14:23.033247513+10:00"

@@ -1,0 +1,12 @@
+---
+apiVersion: v2
+name: rhoai
+description: Red Hat OpenShift AI and supporting operators
+version: 0.1.0
+appVersion: 0.1.0
+type: application
+
+dependencies:
+  - name: olm-v0-chart
+    version: "1.0.0"
+    repository: "file://../olm/olm-v0-chart"

@@ -1,0 +1,346 @@
+# Install phase controls progressive deployment:
+#   1 = operators only (subscriptions, namespaces, catalogsource, ICSP)
+#   2 = + operator CRs (DSC, DSCI, Kuadrant, Authorino, LWS, JobSet, HardwareProfile)
+#   3 = + RHOAI component CRs (OdhDashboardConfig, OdhDocument, MLflow)
+installPhase: 3
+
+olm-v0-chart:
+  operators:
+    # rhoai
+    - name: rhods-operator
+      namespace:
+        name: redhat-ods-operator
+        create: true
+        global: true
+      channels: [stable-3.4]
+      version: "3.4.0"
+      catalog: openshift-redhat-operators
+      source: rhoai-catalog-nightly
+      sourceNamespace: openshift-marketplace
+      enabled: true
+
+    # tekton pipelines
+    - name: openshift-pipelines-operator-rh
+      namespace:
+        name: openshift-operators
+        create: false
+      channels: [latest]
+      version: "1.22.0"
+      catalog: openshift-redhat-operators
+      source: redhat-operators
+      sourceNamespace: openshift-marketplace
+      enabled: true
+
+    # kueue
+    - name: kueue-operator
+      namespace:
+        name: openshift-kueue-operator
+        create: true
+        global: true
+      channels: [stable-v1.3]
+      version: "1.3.1"
+      catalog: openshift-redhat-operators
+      source: redhat-operators
+      sourceNamespace: openshift-marketplace
+      enabled: true
+
+    # leader worker set
+    - name: leader-worker-set
+      namespace:
+        name: openshift-lws-operator
+        create: true
+        global: false
+      channels: [stable-v1.0]
+      version: "1.0.0"
+      catalog: openshift-redhat-operators
+      source: redhat-operators
+      sourceNamespace: openshift-marketplace
+      enabled: true
+
+    # rhcl - kuadrant
+    - name: rhcl-operator
+      namespace:
+        name: kuadrant-system
+        create: true
+        global: true
+      channels: [stable]
+      version: "1.3.3"
+      catalog: openshift-redhat-operators
+      source: redhat-operators
+      sourceNamespace: openshift-marketplace
+      enabled: true
+
+    # jobset
+    - name: job-set
+      namespace:
+        name: openshift-jobset-operator
+        create: true
+        global: false
+      channels: [stable-v1.0]
+      version: "1.0.0"
+      catalog: openshift-redhat-operators
+      source: redhat-operators
+      sourceNamespace: openshift-marketplace
+      enabled: true
+
+# Nightly catalog + ICSP
+nightly:
+  enabled: true
+  catalogSource:
+    name: rhoai-catalog-nightly
+    displayName: RHOAI 3.4 Nightly
+    image: quay.io/rhoai/rhoai-fbc-fragment:rhoai-3.4
+
+# Custom Resources
+dsci:
+  enabled: true
+  spec:
+    applicationsNamespace: redhat-ods-applications
+    monitoring:
+      alerting: {}
+      managementState: Managed
+      metrics:
+        replicas: 1
+        storage:
+          retention: 90d
+          size: 5Gi
+      namespace: redhat-ods-monitoring
+      traces:
+        sampleRatio: "0.1"
+        storage:
+          backend: pv
+          size: 5Gi
+          retention: 2160h0m0s
+    trustedCABundle:
+      customCABundle: ""
+      managementState: Managed
+
+dsc:
+  enabled: true
+  namespace: redhat-ods-operator
+  spec:
+    components:
+      aipipelines:
+        argoWorkflowsControllers:
+          managementState: Managed
+        managementState: Managed
+      dashboard:
+        managementState: Managed
+      feastoperator:
+        managementState: Managed
+      kserve:
+        managementState: Managed
+        modelsAsService:
+          managementState: Managed
+        nim:
+          managementState: Managed
+        rawDeploymentServiceConfig: Headed
+      kueue:
+        defaultClusterQueueName: default
+        defaultLocalQueueName: default
+        managementState: Unmanaged
+      llamastackoperator:
+        managementState: Managed
+      mlflowoperator:
+        managementState: Managed
+      modelregistry:
+        managementState: Managed
+        registriesNamespace: rhoai-model-registries
+      ray:
+        managementState: Managed
+      trainer:
+        managementState: Managed
+      trainingoperator:
+        managementState: Managed
+      trustyai:
+        eval:
+          lmeval:
+            permitCodeExecution: deny
+            permitOnline: deny
+        managementState: Managed
+      workbenches:
+        managementState: Managed
+        workbenchNamespace: rhods-notebooks
+
+odhDashboard:
+  enabled: true
+  namespace: redhat-ods-applications
+  spec:
+    dashboardConfig:
+      disableAdminConnectionTypes: false
+      disableBYONImageStream: false
+      disableClusterManager: false
+      disableCustomServingRuntimes: false
+      disableDistributedWorkloads: true
+      disableFeatureStore: false
+      disableHome: false
+      disableISVBadges: false
+      disableInfo: false
+      disableKueue: false
+      disableKServe: false
+      disableKServeAuth: false
+      disableKServeMetrics: false
+      disableKServeRaw: false
+      disableLMEval: false
+      disableModelCatalog: false
+      disableModelRegistry: false
+      disableModelRegistrySecureDB: false
+      disableModelServing: false
+      disableNIMModelServing: false
+      disablePerformanceMetrics: false
+      disablePipelines: false
+      disableProjectSharing: false
+      disableProjects: false
+      disableProjectScoped: false
+      disableServingRuntimeParams: false
+      disableStorageClasses: false
+      disableSupport: false
+      disableTracking: false
+      disableTrustyBiasMetrics: false
+      disableUserManagement: false
+      aiAssetCustomEndpoints: true
+      enablement: true
+      genAiStudio: true
+      maasAuthPolicies: true
+      modelAsService: true
+      trainingJobs: true
+      observabilityDashboard: true
+    genAiStudioConfig:
+      aiAssetCustomEndpoints:
+        externalProviders: true
+    groupsConfig:
+      adminGroups: rhods-admins
+      allowedGroups: system:authenticated
+    modelServerSizes:
+      - name: Small
+        resources:
+          limits:
+            cpu: "1"
+            memory: 4Gi
+          requests:
+            cpu: "1"
+            memory: 4Gi
+      - name: Medium
+        resources:
+          limits:
+            cpu: "4"
+            memory: 8Gi
+          requests:
+            cpu: "4"
+            memory: 8Gi
+      - name: Large
+        resources:
+          limits:
+            cpu: "6"
+            memory: 16Gi
+          requests:
+            cpu: "6"
+            memory: 16Gi
+    notebookController:
+      enabled: true
+      notebookNamespace: rhods-notebooks
+      notebookTolerationSettings:
+        enabled: false
+        key: NotebooksOnly
+      pvcSize: 20Gi
+    notebookSizes:
+      - name: Small
+        resources:
+          limits:
+            cpu: "1"
+            memory: 8Gi
+          requests:
+            cpu: "1"
+            memory: 8Gi
+      - name: Medium
+        resources:
+          limits:
+            cpu: "2"
+            memory: 12Gi
+          requests:
+            cpu: "2"
+            memory: 12Gi
+      - name: Large
+        resources:
+          limits:
+            cpu: "4"
+            memory: 24Gi
+          requests:
+            cpu: "4"
+            memory: 24Gi
+      - name: X Large
+        resources:
+          limits:
+            cpu: "8"
+            memory: 48Gi
+          requests:
+            cpu: "8"
+            memory: 48Gi
+    templateDisablement: []
+    templateOrder: []
+
+leaderWorkerSet:
+  enabled: true
+
+kuadrant:
+  enabled: true
+  namespace: kuadrant-system
+
+authorino:
+  enabled: true
+  namespace: kuadrant-system
+  replicas: 1
+  logLevel: debug
+  tls:
+    certSecretName: authorino-server-cert
+
+jobSet:
+  enabled: true
+
+hardwareProfile:
+  enabled: true
+  name: cpu-only
+  displayName: cpu-only
+  namespace: redhat-ods-applications
+  spec:
+    identifiers:
+      - defaultCount: 2
+        displayName: CPU
+        identifier: cpu
+        maxCount: 28
+        minCount: 1
+        resourceType: CPU
+      - defaultCount: 4Gi
+        displayName: Memory
+        identifier: memory
+        maxCount: 128Gi
+        minCount: 1Gi
+        resourceType: Memory
+    scheduling:
+      kueue:
+        localQueueName: default
+        priorityClass: None
+      type: Queue
+
+odhDocument:
+  enabled: true
+  name: rhoai-tutorial-voice-agents
+  namespace: redhat-ods-applications
+  categories: "Getting started,Agents,Notebook environments"
+  displayName: "OpenShift AI tutorial - Voice agents example"
+  description: "Use OpenShift AI to build a voice agent application."
+  url: https://eformat.github.io/voice-agents
+  durationMinutes: 120
+
+mlflow:
+  enabled: true
+  spec:
+    storage:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+    backendStoreUri: "sqlite:////mlflow/mlflow.db"
+    artifactsDestination: "file:///mlflow/artifacts"
+    serveArtifacts: true

@@ -16,15 +16,12 @@ metadata:
 spec:
   dashboardConfig:
     disableAdminConnectionTypes: false
-    disableAcceleratorProfiles: false
     disableBYONImageStream: false
     disableClusterManager: false
     disableCustomServingRuntimes: false
     disableDistributedWorkloads: true
     disableFeatureStore: false
-    disableFineTuning: false
     disableHome: false
-    disableHardwareProfiles: false
     disableISVBadges: false
     disableInfo: false
     disableKueue: false
@@ -53,7 +50,6 @@ spec:
     enablement: true
     genAiStudio: true
     maasAuthPolicies: true
-    mlflow: true
     modelAsService: true
     trainingJobs: true
     observabilityDashboard: true

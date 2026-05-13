@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: https://github.com/eformat/fake-gpu-booking.git
     targetRevision: main
-    path: rhoai/overlay/base
+    path: rhoai-chart
   syncPolicy:
     automated:
       selfHeal: true

@@ -13,6 +13,7 @@ package-lock.json
 acm/base/charts/gpu-booking-plugin-*/
 acm/base/charts/fake-gpu-operator-*/
 acm/base/gpu-operator/charts/
+rhoai-chart/charts/
 
 WORKSHOP_OUTLINE.md
 .vscode/

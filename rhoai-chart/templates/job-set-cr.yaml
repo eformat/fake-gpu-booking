@@ -1,0 +1,12 @@
+{{- if and (ge (int .Values.installPhase) 2) .Values.jobSet.enabled }}
+---
+apiVersion: operator.openshift.io/v1
+kind: JobSetOperator
+metadata:
+  name: cluster
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  logLevel: Normal
+  operatorLogLevel: Normal
+{{- end }}

@@ -1,0 +1,11 @@
+{{- if and (ge (int .Values.installPhase) 2) .Values.dsci.enabled }}
+---
+kind: DSCInitialization
+apiVersion: dscinitialization.opendatahub.io/v2
+metadata:
+  name: default-dsci
+  annotations:
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  {{- .Values.dsci.spec | toYaml | nindent 2 }}
+{{- end }}

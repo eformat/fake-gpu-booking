@@ -161,6 +161,36 @@ func (c *Client) updateClusterQueue(ctx context.Context, name string, gpuCount i
 	resourceGroups := c.buildResourceGroups("gpu-pool", 0, 0, 0, zeroedMigCounts(migCounts))
 
 	existing, err := c.dynamicClient.Resource(clusterQueueGVR).Get(ctx, name, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		spec := map[string]interface{}{
+			"cohort":         "unreserved",
+			"resourceGroups": resourceGroups,
+		}
+		if name == "unreserved-priority" {
+			spec["namespaceSelector"] = map[string]interface{}{
+				"matchLabels": map[string]interface{}{
+					"rhai-tmm.dev/clusterqueues": "h200-priority",
+				},
+			}
+			spec["preemption"] = map[string]interface{}{
+				"borrowWithinCohort": map[string]interface{}{
+					"maxPriorityThreshold": int64(100),
+					"policy":               "LowerPriority",
+				},
+				"reclaimWithinCohort": "LowerPriority",
+			}
+		}
+		obj := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "kueue.x-k8s.io/v1beta2",
+				"kind":       "ClusterQueue",
+				"metadata":   map[string]interface{}{"name": name},
+				"spec":       spec,
+			},
+		}
+		_, err = c.dynamicClient.Resource(clusterQueueGVR).Create(ctx, obj, metav1.CreateOptions{})
+		return err
+	}
 	if err != nil {
 		return err
 	}
