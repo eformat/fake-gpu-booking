@@ -1,0 +1,27 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gpu-config-plugin
+  namespace: openshift-gitops
+spec:
+  destination:
+    namespace: gpu-config-plugin
+    server: "https://kubernetes.default.svc"
+  project: default
+  source:
+    repoURL: https://github.com/eformat/fake-gpu-booking.git
+    targetRevision: main
+    path: console-plugin/chart
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - Validate=true
+      - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true
+      - RespectIgnoreDifferences=true
+    managedNamespaceMetadata:
+      labels:
+        argocd.argoproj.io/managed-by: openshift-gitops
