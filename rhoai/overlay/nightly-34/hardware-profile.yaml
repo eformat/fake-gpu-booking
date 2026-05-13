@@ -7,7 +7,7 @@ metadata:
     opendatahub.io/disabled: "false"
     opendatahub.io/display-name: cpu-only
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "3"
   name: cpu-only
   namespace: redhat-ods-applications
 spec:
