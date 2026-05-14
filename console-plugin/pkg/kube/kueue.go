@@ -195,6 +195,12 @@ func (c *Client) updateClusterQueue(ctx context.Context, name string, gpuCount i
 		return err
 	}
 	unstructured.SetNestedSlice(existing.Object, resourceGroups, "spec", "resourceGroups")
+	if _, found, _ := unstructured.NestedMap(existing.Object, "spec", "namespaceSelector"); !found {
+		unstructured.SetNestedMap(existing.Object, map[string]interface{}{}, "spec", "namespaceSelector")
+	}
+	if _, found, _ := unstructured.NestedString(existing.Object, "spec", "cohortName"); !found {
+		unstructured.SetNestedField(existing.Object, "unreserved", "spec", "cohortName")
+	}
 	_, err = c.dynamicClient.Resource(clusterQueueGVR).Update(ctx, existing, metav1.UpdateOptions{})
 	return err
 }
