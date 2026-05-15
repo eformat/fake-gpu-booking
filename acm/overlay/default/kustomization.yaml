@@ -1,3 +1,14 @@
 ---
 resources:
   - ../../base
+
+patches:
+  - target:
+      kind: ConfigMap
+      name: topology
+    patch: |-
+      $patch: delete
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: topology
