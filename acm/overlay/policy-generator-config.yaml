@@ -28,3 +28,6 @@ policies:
   - name: fake-gpu
     manifests:
       - path: default/
+  - name: fake-gpu-console-plugin
+    manifests:
+      - path: console-plugin/
