@@ -1,6 +1,4 @@
 ---
-namespace: gpu-config-plugin
-
 resources:
   - namespace.yaml
 
