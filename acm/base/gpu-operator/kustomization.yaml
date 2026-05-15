@@ -3,6 +3,7 @@ namespace: gpu-operator
 
 resources:
   - namespace.yaml
+  - operatorgroup.yaml
   - label-nodes-job.yaml
 
 helmCharts:
