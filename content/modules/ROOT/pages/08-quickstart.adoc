@@ -1,0 +1,395 @@
+= Quickstart: End-to-End GPU Booking Demo
+:navtitle: Quickstart
+:toc: macro
+:toclevels: 1
+:icons: font
+
+This quickstart walks through the complete GPU booking workflow end to end. You will configure a GPU profile as an administrator, deploy an unreserved workload as one user, then reserve GPUs and launch a workbench as a second user -- triggering preemption and observing how Kueue manages resource contention automatically.
+
+== Learning objectives
+
+By the end of this quickstart, you'll be able to:
+
+* Configure and deploy a GPU profile using the GPU Config console plugin
+* Deploy unreserved GPU workloads via Helm
+* Create a GPU reservation through the booking app
+* Launch an RHOAI workbench using a reserved Hardware Profile
+* Observe Kueue preemption when reserved workloads claim resources from unreserved ones
+* Clean up all resources
+
+== Personas in this quickstart
+
+This walkthrough uses three user identities:
+
+[cols="1,1,3",options="header"]
+|===
+| User | Role | Actions
+
+| `prelude`
+| Cluster admin
+| Configures the GPU profile, discovers GPUs, sets up the environment
+
+| `user1`
+| Regular user
+| Deploys an unreserved workload consuming all GPUs
+
+| `user2`
+| Regular user
+| Reserves a GPU, creates an RHOAI workbench, triggers preemption of user1's workload
+|===
+
+== Exercise 1: Configure GPU profile (Admin)
+
+[IMPORTANT]
+====
+**Acting as: `prelude`** (cluster admin) +
+Log in to the OpenShift Console at `{openshift_console_url}` with username `prelude` and password `{password}`.
+====
+
+=== Deploy the NVIDIA GB200 NVL profile
+
+. In the OpenShift Console, navigate to **GPU Config** in the left navigation menu.
+
+. Select the **NVIDIA GB200 NVL** profile card.
+
+. Click **Deploy** to apply the GPU profile to the cluster.
+
+image::qs-gpu-config-gb200.png[GPU Config plugin showing GB200 NVL profile selected,link=self,window=blank,width=700]
+
+. Wait for the deployment to complete. The status panel will show the progress of node labeling and operator restart.
+
+image::qs-gpu-config-deployed.png[GPU Config showing successful deployment,link=self,window=blank,width=700]
+
+=== Discover GPUs
+
+. Navigate to **GPU Booking** > **Administration** in the console menu.
+
+. Click **Discover GPUs** to detect the newly configured GPU resources.
+
+image::qs-discover-gpus.png[GPU Booking Administration after discovering GPUs,link=self,window=blank,width=700]
+
+=== Verify empty bookings
+
+. Navigate to **GPU Booking** > **Bookings**.
+
+. Observe the empty topology usage overview -- no workloads are consuming GPUs yet.
+
+image::qs-empty-bookings.png[GPU Booking showing empty topology,link=self,window=blank,width=700]
+
+=== Verify
+
+&#10003; GB200 NVL GPU profile deployed successfully +
+&#10003; GPUs discovered in the booking administration panel +
+&#10003; Bookings page shows empty topology
+
+== Exercise 2: Deploy an unreserved workload (user1)
+
+[IMPORTANT]
+====
+**Acting as: `user1`** +
+Log in to the OpenShift CLI:
+
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u user1 -p {password}
+----
+====
+
+=== Deploy workload
+
+. Deploy a workload requesting 8 full GPUs to the unreserved cluster queue:
++
+[.copypaste]
+[source,bash]
+----
+helm template gpu-deploy workloads/ -n user-user1 \
+  --set kind=Deployment \
+  --set name=gpu-fake-gpu \
+  --set replicas=1 \
+  --set gpuCount=8 \
+  --set gpuResourceType=nvidia.com/gpu \
+  --set reserved=false \
+  | oc -n user-user1 apply -f-
+----
+
+. Wait for the deployment to be ready:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-user1 rollout status deployment/gpu-fake-gpu --timeout=120s
+----
+
+=== Verify GPU allocation
+
+. Check that the pod can see the GPUs:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-user1 exec $(oc -n user-user1 get pod -l app=gpu-fake-gpu -o name) -- nvidia-smi
+----
++
+You should see 8 NVIDIA GB200 NVL GPUs listed.
+
+. Check the Kueue resources:
++
+[.copypaste]
+[source,bash]
+----
+oc get lq,cq,workload -A
+----
++
+The workload should be admitted to the `unreserved` ClusterQueue.
+
+. Open the **GPU Booking** > **Bookings** page in the OpenShift Console to see all 8 full GPUs consumed:
+
+image::qs-user1-workload-running.png[GPU Booking showing 8 GPUs consumed by user1,link=self,window=blank,width=700]
+
+=== Check RHOAI dashboard
+
+. Open the Red Hat OpenShift AI dashboard:
++
+`{openshift_ai_url}`
++
+Log in as `user1` with password `{password}`.
+
+image::qs-rhoai-dashboard.png[RHOAI Data Science Projects dashboard,link=self,window=blank,width=700]
+
+=== Verify
+
+&#10003; Deployment `gpu-fake-gpu` is running in `user-user1` namespace +
+&#10003; `nvidia-smi` shows 8 GPUs allocated +
+&#10003; GPU Booking shows 8/8 full GPUs consumed +
+&#10003; RHOAI dashboard is accessible
+
+== Exercise 3: Reserve a GPU and create a workbench (user2)
+
+[IMPORTANT]
+====
+**Acting as: `user2`** +
+Log in to the OpenShift Console at `{openshift_console_url}` with username `user2` and password `{password}`.
+====
+
+=== Create a GPU booking
+
+. Navigate to **GPU Booking** > **Bookings** in the console menu.
+
+. Scroll down to the calendar and click on **today's date**.
+
+. In the slot grid below the calendar, find the **NVIDIA GB200 NVL Full GPU** row. All 8 units show `user1` consumed.
+
+. Click **Override** on one of the consumed slots to create a reservation that will preempt the unreserved workload.
+
+image::qs-create-booking.png[GPU Booking calendar with slot grid,link=self,window=blank,width=700]
+
+The slot grid now shows your reservation alongside user1's consumed workloads:
+
+image::qs-booking-confirmed.png[Slot grid showing user2 reservation and user1 consumed slots,link=self,window=blank,width=700]
+
+=== Create an RHOAI workbench
+
+. Open the Red Hat OpenShift AI dashboard:
++
+`{openshift_ai_url}`
++
+Log in as `user2` with password `{password}`.
+
+. Navigate to **Projects** and select the **User User2 Project**.
+
+. Click **Create a workbench** and fill in:
++
+* **Name:** `fake-gpu-workbench`
+* **Image selection:** Training | Jupyter | PyTorch | CUDA | Python
+* **Hardware profile:** Reserved GPU (Project-scoped)
+
+image::qs-workbench-create.png[RHOAI workbench creation form with Reserved GPU hardware profile,link=self,window=blank,width=700]
+
+. Click **Create workbench** and wait for it to reach **Ready** status.
+
+image::qs-workbench-running.png[RHOAI workbench in Ready state,link=self,window=blank,width=700]
+
+=== Verify Kueue state
+
+. Log in to the CLI as `user2`:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u user2 -p {password}
+----
+
+. Check the Kueue resources:
++
+[.copypaste]
+[source,bash]
+----
+oc get lq,cq,workload -A
+----
+
+=== Verify
+
+&#10003; GPU booking created for user2 +
+&#10003; Workbench `fake-gpu-workbench` is running in RHOAI +
+&#10003; User2's ClusterQueue and LocalQueue are visible in Kueue
+
+== Exercise 4: Observe preemption
+
+When user2's reserved workload starts, Kueue automatically evicts user1's unreserved pod to free the GPU. You can observe this in both the CLI and the GPU Booking app.
+
+=== User1: Watch pod preemption
+
+[IMPORTANT]
+====
+**Acting as: `user1`** +
+Switch to the user1 CLI context:
+
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u user1 -p {password}
+----
+====
+
+. Check the pods in user1's namespace:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-user1 get pods
+----
++
+User1's pod should show `SchedulingGated` -- Kueue has evicted it to reclaim the GPU for user2's reservation.
+
+. Open the **GPU Booking** > **Bookings** page to see the preemption reflected in the usage overview. User2's reservation (red) now holds 1 GPU:
+
+image::qs-preemption-user1.png[GPU Booking showing preemption -- user2 reservation active while user1 is evicted,link=self,window=blank,width=700]
+
+=== User2: Delete workbench and observe recovery
+
+[IMPORTANT]
+====
+**Acting as: `user2`** +
+Return to the RHOAI dashboard as user2.
+====
+
+. In RHOAI, navigate to **Projects** > **User User2 Project** > **Workbenches**.
+
+. Delete the `fake-gpu-workbench` workbench using the kebab menu (three dots).
+
+. Once the workbench is deleted, user2's workload releases the GPU. User1's pod will automatically recover and return to `Running` status.
+
+=== User1: Pod recovers
+
+[IMPORTANT]
+====
+**Acting as: `user1`**
+====
+
+. Verify user1's pod is running again:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-user1 get pods
+----
+
+=== User2: Cancel booking
+
+[IMPORTANT]
+====
+**Acting as: `user2`** +
+Return to the OpenShift Console as user2.
+====
+
+. Navigate to **GPU Booking** > **Bookings** and click **My Bookings**.
+
+. Click **Cancel All** to remove the GPU reservation, then click **Confirm**.
+
+image::qs-cancel-booking.png[GPU Booking My Bookings with Cancel All button,link=self,window=blank,width=700]
+
+. Verify that the Kueue resources for user2 are removed:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u user2 -p {password}
+oc get cq,lq,hardwareprofile -A
+----
++
+The user2 ClusterQueue, reserved LocalQueue, and HardwareProfiles should no longer appear.
+
+=== Verify
+
+&#10003; User1's pod was preempted (`SchedulingGated`) when user2's reserved workload started +
+&#10003; User1's pod recovered to `Running` after user2 deleted the workbench +
+&#10003; User2's ClusterQueue, LocalQueue, and HardwareProfiles removed after canceling the booking
+
+== Exercise 5: Cleanup
+
+=== User1: Delete workload
+
+[IMPORTANT]
+====
+**Acting as: `user1`**
+
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u user1 -p {password}
+----
+====
+
+. Delete the unreserved deployment:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-user1 delete deployment gpu-fake-gpu
+----
+
+=== User2: Delete storage
+
+[IMPORTANT]
+====
+**Acting as: `user2`**
+
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u user2 -p {password}
+----
+====
+
+. Delete the workbench storage:
++
+[.copypaste]
+[source,bash]
+----
+oc -n user-user2 delete pvc fake-gpu-workbench-storage
+----
+
+=== Verify
+
+&#10003; No deployments remain in `user-user1` +
+&#10003; No PVCs remain in `user-user2` +
+&#10003; GPU resources fully released
+
+== Module summary
+
+**What you accomplished:**
+
+* Configured the NVIDIA GB200 NVL GPU profile as a cluster administrator
+* Deployed an unreserved GPU workload consuming all available GPUs
+* Created a GPU reservation and launched an RHOAI workbench with a reserved Hardware Profile
+* Observed Kueue preemption in action -- reserved workloads automatically evict unreserved ones
+* Cleaned up all resources
+
+**Key takeaways:**
+
+* The GPU Config plugin lets administrators select and deploy GPU profiles with a single click
+* The GPU Booking app creates Kueue resources (ClusterQueues, LocalQueues, HardwareProfiles) from calendar reservations
+* Reserved workloads always take priority over unreserved ones through Kueue's `reclaimWithinCohort` policy
+* Preemption is fully automatic -- users only interact with the booking calendar and RHOAI
+* When a reservation is canceled, all associated Kueue resources are cleaned up automatically

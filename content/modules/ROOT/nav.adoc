@@ -3,6 +3,9 @@
 .Getting Started
 * xref:getting-connected.adoc[Getting Connected]
 
+.Quickstart
+* xref:08-quickstart.adoc[Quickstart: End-to-End Demo]
+
 .Modules
 * xref:02-module-01-fake-gpus.adoc[Module 1: Fake GPUs]
 * xref:03-module-02-gpu-booking.adoc[Module 2: GPU Booking]
