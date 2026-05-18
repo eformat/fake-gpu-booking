@@ -61,7 +61,7 @@ You should see `nvidia.com/gpu`, `nvidia.com/mig-1g.18gb`, `nvidia.com/mig-2g.35
 [.copypaste]
 [source,bash]
 ----
-oc get pods -n kueue-system
+oc get pods -n openshift-kueue-operator
 ----
 
 . List the ClusterQueues:
@@ -73,6 +73,17 @@ oc get clusterqueues
 ----
 +
 You should see at least `default`, `unreserved`, and `unreserved-priority` ClusterQueues.
+
+. Clone a copy of this repo locally:
++
+[.copypaste]
+[source,bash]
+----
+git clone https://github.com/eformat/fake-gpu-booking.git
+cd fake-gpu-booking
+----
++
+We will use this repo to deploy test workloads to the cluster. This is the same repo that was used to deploy the GPU booking app.
 
 == Access OpenShift AI
 
@@ -86,7 +97,7 @@ Or click **Red Hat OpenShift AI** in the right panel tabs.
 
 == Set up your namespace
 
-. Verify your user namespace exists:
+. Verify your user namespace exists (user1, user2):
 +
 [.copypaste]
 [source,bash,subs="attributes"]

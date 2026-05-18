@@ -314,8 +314,7 @@ image::qs-cancel-booking.png[GPU Booking My Bookings with Cancel All button,link
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc login {openshift_api_url} -u user2 -p {password}
-oc get cq,lq,hardwareprofile -A
+oc -n user-user2 get cq,lq,hardwareprofile
 ----
 +
 The user2 ClusterQueue, reserved LocalQueue, and HardwareProfiles should no longer appear.
