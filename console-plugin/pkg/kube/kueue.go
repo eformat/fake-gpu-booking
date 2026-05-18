@@ -163,8 +163,9 @@ func (c *Client) updateClusterQueue(ctx context.Context, name string, gpuCount i
 	existing, err := c.dynamicClient.Resource(clusterQueueGVR).Get(ctx, name, metav1.GetOptions{})
 	if apierrors.IsNotFound(err) {
 		spec := map[string]interface{}{
-			"cohortName":     "unreserved",
-			"resourceGroups": resourceGroups,
+			"cohortName":        "unreserved",
+			"resourceGroups":    resourceGroups,
+			"namespaceSelector": map[string]interface{}{},
 		}
 		if name == "unreserved-priority" {
 			spec["namespaceSelector"] = map[string]interface{}{
