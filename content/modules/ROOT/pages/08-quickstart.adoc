@@ -147,16 +147,6 @@ The workload should be admitted to the `unreserved` ClusterQueue.
 
 image::qs-user1-workload-running.png[GPU Booking showing 8 GPUs consumed by user1,link=self,window=blank,width=700]
 
-=== Check RHOAI dashboard
-
-. Open the Red Hat OpenShift AI dashboard:
-+
-`{openshift_ai_url}`
-+
-Log in as `user1` with password `{password}`.
-
-image::qs-rhoai-dashboard.png[RHOAI Data Science Projects dashboard,link=self,window=blank,width=700]
-
 === Verify
 
 &#10003; Deployment `gpu-fake-gpu` is running in `user-user1` namespace +
