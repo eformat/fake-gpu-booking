@@ -48,7 +48,7 @@ Log in to the OpenShift Console at `{openshift_console_url}` with username `prel
 
 === Deploy the NVIDIA GB200 NVL profile
 
-. In the OpenShift Console, navigate to **GPU Config** in the left navigation menu.
+. In the OpenShift Console, navigate to **GPU Config > GPU Profiles** in the left navigation menu.
 
 . Select the **NVIDIA GB200 NVL** profile card.
 
