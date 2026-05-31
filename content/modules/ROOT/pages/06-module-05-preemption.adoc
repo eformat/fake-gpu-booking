@@ -51,7 +51,7 @@ First, let's consume GPU resources with unreserved workloads.
 [.copypaste]
 [source,bash]
 ----
-helm template gpu-deploy workloads/ -n user-admin \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-admin \
   --set kind=Deployment \
   --set name=gpu-fake-gpu \
   --set replicas=1 \
@@ -99,7 +99,7 @@ Now deploy a reserved workload from a different user. This simulates a user with
 [.copypaste]
 [source,bash]
 ----
-helm template gpu-deploy workloads/ -n user-admin1 \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-admin1 \
   --set kind=Deployment \
   --set name=gpu-fake-gpu \
   --set replicas=1 \
@@ -164,7 +164,7 @@ Preemption also works with MIG partitions. Let's test with MIG-1g.18gb devices.
 [.copypaste]
 [source,bash]
 ----
-helm template gpu-deploy workloads/ -n user-admin \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-admin \
   --set kind=Deployment \
   --set name=gpu-fake-18gb \
   --set replicas=1 \
@@ -187,7 +187,7 @@ oc -n user-admin rollout status deployment/gpu-fake-18gb --timeout=60s
 [.copypaste]
 [source,bash]
 ----
-helm template gpu-deploy workloads/ -n user-admin1 \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-admin1 \
   --set kind=Deployment \
   --set name=gpu-fake-18gb \
   --set replicas=1 \

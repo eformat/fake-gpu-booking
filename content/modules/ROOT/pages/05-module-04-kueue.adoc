@@ -138,7 +138,7 @@ Topology defines zone and hostname levels for pod spreading.
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-helm template gpu-deploy workloads/ -n {user} \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n {user} \
   --set kind=Pod \
   --set name=kueue-test \
   --set replicas=1 \

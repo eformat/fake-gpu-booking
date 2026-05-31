@@ -105,7 +105,7 @@ You should see `Login successful` and the list of accessible projects.
 [.copypaste]
 [source,bash]
 ----
-helm template gpu-deploy workloads/ -n user-user1 \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-user1 \
   --set kind=Deployment \
   --set name=gpu-fake-gpu \
   --set replicas=1 \

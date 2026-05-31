@@ -83,7 +83,7 @@ oc get pods -n fake-gpu-operator
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-helm template gpu-deploy workloads/ -n {user} \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n {user} \
   --set kind=Pod \
   --set name=gpu-test \
   --set replicas=1 \
@@ -132,7 +132,7 @@ oc describe node -l nvidia.com/gpu.present=true | grep -A 5 "Allocated resources
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-helm template gpu-deploy workloads/ -n {user} \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n {user} \
   --set kind=Pod \
   --set name=mig-test \
   --set replicas=1 \
