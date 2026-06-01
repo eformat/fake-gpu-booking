@@ -242,7 +242,7 @@ The preemption policy on your ClusterQueue controls the difference between reser
 
 This is why the booking app shows two colors: **red** means guaranteed capacity backed by `nominalQuota`, and **green** means your workload is consuming more than its reservation by borrowing idle Cohort resources.
 
-TIP: Borrowed GPUs let you burst beyond your reservation when the cluster has spare capacity, but they come with no guarantee. If you need all 6 GPUs to be protected, increase your reservation to 6 in the booking calendar.
+TIP: Borrowed GPUs let you burst beyond your reservation when the cluster has spare capacity, but they come with no guarantee. If you need all 6 GPUs to be protected, increase your reservation to 6 in the booking calendar using the **Override** button.
 
 === Correlate with Kueue state
 
@@ -277,33 +277,6 @@ PENDING:.status.pendingWorkloads
 &#10003; Can identify borrowed vs. nominalQuota usage in ClusterQueue status +
 &#10003; Can correlate calendar colors (red/green) with Kueue resource state
 
-== Exercise 4: Check Hardware Profiles
-
-When you make a reservation, the booking app also creates RHOAI Hardware Profiles so you can select your reserved GPU type when launching a workbench.
-
-. List Hardware Profiles in your namespace:
-+
-[.copypaste]
-[source,bash,subs="attributes"]
-----
-oc -n user-{user-user1} get hardwareprofiles
-----
-
-. Inspect a Hardware Profile:
-+
-[.copypaste]
-[source,bash,subs="attributes"]
-----
-oc -n user-{user-user1} get hardwareprofiles -o yaml | grep -A 15 "spec:"
-----
-+
-Each HardwareProfile specifies CPU, memory, and GPU resource limits that match a Kueue queue.
-
-=== Verify
-
-&#10003; HardwareProfiles exist in your namespace +
-&#10003; Profiles match your reserved GPU resource type
-
 == Module summary
 
 **What you accomplished:**
@@ -311,13 +284,13 @@ Each HardwareProfile specifies CPU, memory, and GPU resource limits that match a
 * Navigated the GPU Booking App in the OpenShift Console
 * Created a GPU reservation and observed the Kueue resources it provisions
 * Understood the difference between reserved and consumed bookings
-* Inspected HardwareProfiles created by the reservation sync
+* Explained why workloads can consume more GPUs than reserved through Cohort borrowing
 
 **Key takeaways:**
 
 * The booking app bridges the gap between calendar-based GPU scheduling and Kubernetes resource management
 * Reservations create per-user ClusterQueues with protected `nominalQuota`
 * Consumed bookings are auto-detected from actual workload usage via Kueue sync
-* HardwareProfiles link reservations to RHOAI workbench GPU selection
+* Workloads can borrow idle Cohort resources beyond their reservation, but borrowed GPUs are not protected from preemption
 
-**Next:** Module 3 explores RHOAI Hardware Profiles in depth -- how they connect GPU reservations to workbenches and model serving.
+**Next:** Module 3 explores RHOAI Hardware Profiles -- how the booking app creates them from reservations and how they connect to workbenches and Data Science Projects.
