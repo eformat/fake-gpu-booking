@@ -214,6 +214,8 @@ The slot grid now shows your reservation alongside user1's consumed workloads:
 
 image::qs-booking-confirmed.png[Slot grid showing user2 reservation and user1 consumed slots,link=self,window=blank,width=700]
 
+image::qs-booking-confirmed-2.png[GPU Booking grid showing user2 reservation and user1 consumed slots,link=self,window=blank,width=700]
+
 === Create an RHOAI workbench
 
 . Open the Red Hat OpenShift AI dashboard:
