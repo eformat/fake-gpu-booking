@@ -56,6 +56,8 @@ The reservation sync creates Hardware Profiles with specific resource limits tha
 
 When you make a reservation through the booking app, additional per-user profiles are created that point to your reserved ClusterQueue.
 
+image::gpu-bulk-book-workbench.png[GPU bulk booking,link=self,window=blank,width=700]
+
 == Exercise 1: Reserve GPUs and MIG slices, inspect the Hardware Profiles
 
 We cleaned up all resources at the end of Module 2, so we need fresh GPU reservations. This time we'll reserve a mix of resource types using **bulk booking** to see how the booking app generates a separate Hardware Profile for each GPU resource type.
