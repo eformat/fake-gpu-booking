@@ -116,13 +116,13 @@ The MIG resources may be present but show "0" as the count. This is expected fro
 
 [IMPORTANT]
 ====
-**Acting as: `{user-1}`** +
-Switch to the {user-1} CLI context:
+**Acting as: `{user-user1}`** +
+Log in to the OpenShift CLI:
 
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc login {openshift_api_url} -u {user-1} -p {password}
+oc login {openshift_api_url} -u {user-user1} -p {password}
 ----
 ====
 
