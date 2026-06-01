@@ -6,15 +6,18 @@
 
 Hardware Profiles in Red Hat OpenShift AI define the compute resources available for workbenches and model serving. In this workshop environment, they connect GPU reservations from the booking app to the RHOAI workbench experience -- when you reserve a GPU, a corresponding HardwareProfile appears so you can launch a workbench with that GPU type.
 
-In this module, you'll explore how Hardware Profiles work, create a workbench using a reserved GPU profile, and understand how profiles link to Kueue queues.
+This is where **GPU as a Service** meets **Data Science**: you reserve GPU capacity through the booking app, and the reservation automatically surfaces as a Hardware Profile that data scientists select when launching workbenches. The data scientist doesn't need to know about Kueue, ClusterQueues, or Cohorts -- they just pick a profile and get a GPU-enabled notebook.
+
+In this module, you'll create a reservation, explore the Hardware Profiles it generates, launch a workbench with a reserved GPU, and verify GPU access from inside the notebook environment.
 
 == Learning objectives
 
 By the end of this module, you'll be able to:
 
-* List and inspect Hardware Profiles in your namespace
+* Create a GPU reservation and inspect the Hardware Profiles it generates
 * Understand how profiles map to Kueue ClusterQueues and ResourceFlavors
 * Launch an RHOAI workbench using a reserved GPU Hardware Profile
+* Verify GPU access from inside a Data Science workbench using `nvidia-smi`
 * Explain the relationship between bookings, profiles, and scheduling
 
 == How Hardware Profiles connect to Kueue
@@ -53,21 +56,37 @@ The reservation sync creates Hardware Profiles with specific resource limits tha
 
 When you make a reservation through the booking app, additional per-user profiles are created that point to your reserved ClusterQueue.
 
-== Exercise 1: Check reservation-created Hardware Profiles
+== Exercise 1: Reserve a GPU and check the Hardware Profiles it creates
+
+We cleaned up all resources at the end of Module 2, so we need a fresh GPU reservation before we can launch a workbench with a reserved profile.
 
 [IMPORTANT]
 ====
 **Acting as: `{user-1}`** +
-Log in to the OpenShift CLI:
+Log in to the OpenShift Console at `{openshift_console_url}` with username `{user-1}` and password `{password}`.
+====
 
+=== Create a GPU reservation
+
+. Navigate to **GPU Booking** > **Bookings** in the console menu.
+
+. Select **today's date** in the calendar.
+
+. In the **GB200 NVL Full GPU** row, reserve **1** GPU by clicking on an available slot.
+
+. Wait for the reservation to appear as a red slot in the calendar.
++
+The Reservation Sync runs every 10 minutes. Once it picks up your booking, it creates a per-user ClusterQueue, LocalQueue, and Hardware Profiles in your namespace.
+
+=== Check the Hardware Profiles
+
+. Log in to the OpenShift CLI:
++
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
 oc login {openshift_api_url} -u {user-1} -p {password}
 ----
-====
-
-When you made a reservation in Module 2, the booking app automatically created RHOAI Hardware Profiles so you can select your reserved GPU type when launching a workbench or Data Science Project.
 
 . List Hardware Profiles in your namespace:
 +
@@ -76,21 +95,24 @@ When you made a reservation in Module 2, the booking app automatically created R
 ----
 oc -n user-{user-1} get hardwareprofiles
 ----
++
+You should see a `reserved-gpu` profile alongside the default unreserved profiles. This profile was created by the booking app's Reservation Sync when it processed your booking.
 
-. Inspect a Hardware Profile:
+. Inspect the reserved Hardware Profile:
 +
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n user-{user-1} get hardwareprofiles -o yaml | grep -A 15 "spec:"
+oc -n user-{user-1} get hardwareprofile reserved-gpu -o yaml | grep -A 15 "spec:"
 ----
 +
-Each HardwareProfile specifies CPU, memory, and GPU resource limits that match a Kueue queue. The reserved profiles point workloads to your user-specific ClusterQueue, ensuring they use your protected `nominalQuota`.
+The reserved profile specifies CPU, memory, and GPU resource limits that match your user-specific ClusterQueue. When a workbench uses this profile, its workload is admitted to your reserved queue with protected `nominalQuota` -- not the shared unreserved pool.
 
 === Verify
 
-&#10003; HardwareProfiles exist in your namespace +
-&#10003; Profiles match your reserved GPU resource type
+&#10003; GPU reservation created in the booking calendar +
+&#10003; `reserved-gpu` HardwareProfile exists in your namespace +
+&#10003; Profile spec shows GPU resource limits pointing to the reserved LocalQueue
 
 == Exercise 2: Explore default Hardware Profiles
 
@@ -126,45 +148,85 @@ oc -n user-{user-user1} get hardwareprofile default-profile -o yaml
 &#10003; GPU profiles include `nvidia.com/gpu` or MIG resource limits +
 &#10003; Default profile has no GPU resource
 
-== Exercise 3: Launch a workbench with a GPU profile
+== Exercise 3: Launch a workbench with the reserved GPU profile
 
-. Open the OpenShift AI dashboard.
+This is where GPU as a Service connects to the Data Science workflow. Your GPU reservation created a `reserved-gpu` Hardware Profile -- now you'll use it to launch a workbench with guaranteed GPU access.
 
-. Navigate to **Data Science Projects** and select your project (`{user-user1}`).
+. Open the Red Hat OpenShift AI dashboard:
++
+`{openshift_ai_url}`
++
+Log in as `{user-1}` with password `{password}`.
+
+. Navigate to **Data Science Projects** and select your project.
 
 . Click **Create workbench** and configure:
 * **Name:** `gpu-workbench`
-* **Image Selection:** Jupyter | Minimal | CPU | Python
-* **Hardware Profile:** Select one of the GPU profiles (e.g., `unreserved-gpu` or your reserved profile if you created a booking in Module 2)
+* **Image Selection:** Training | Jupyter | PyTorch | CUDA | Python
+* **Hardware Profile:** Select **Reserved GPU** (Project-scoped)
++
+The **Reserved GPU** profile appears because you created a reservation in Exercise 1. It targets your user-specific ClusterQueue with protected `nominalQuota`, meaning your workbench GPU cannot be preempted by unreserved workloads.
 
-. Click **Create workbench** and wait for it to start.
+. Click **Create workbench** and wait for it to reach **Ready** status.
 
-. Once running, verify the GPU allocation from the terminal:
+=== Verify GPU access from the workbench
+
+. From the CLI, verify the workbench pod has the GPU allocated:
 +
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n user-{user-user1} get pod -l app=gpu-workbench -o jsonpath='{.items[0].spec.containers[0].resources}' | jq .
+oc -n user-{user-1} exec $(oc -n user-{user-1} get pod -l app=gpu-workbench -o name) -- nvidia-smi
 ----
 +
-You should see the GPU resource in both requests and limits.
+You should see the simulated NVIDIA GB200 NVL GPU with its memory and utilization. This confirms the fake-gpu-operator injected `nvidia-smi` into the workbench pod and the GPU resource is allocated.
 
-. Check which Kueue queue admitted the workload:
+. Verify that the workload was admitted to the **reserved** queue, not the unreserved pool:
 +
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n user-{user-user1} get workloads -o custom-columns=\
+oc -n user-{user-1} get workloads -o custom-columns=\
 NAME:.metadata.name,\
 QUEUE:.spec.queueName,\
 ADMITTED:.status.conditions[0].status
 ----
++
+The `QUEUE` column should show `reserved` -- confirming the workbench is running under your protected reservation, not competing for shared resources.
+
+=== Verify GPU from inside the notebook
+
+You can also verify GPU access directly from within the JupyterLab environment:
+
+. In the OpenShift AI dashboard, click **Open** on the `gpu-workbench` workbench to launch JupyterLab.
+
+. Open a **Terminal** in JupyterLab (File > New > Terminal) and run:
++
+[source,bash]
+----
+nvidia-smi
+----
++
+You should see the same GPU information as the CLI check above.
+
+. In a new **Notebook**, run a quick PyTorch GPU check:
++
+[source,python]
+----
+import torch
+print(f"CUDA available: {torch.cuda.is_available()}")
+print(f"GPU count: {torch.cuda.device_count()}")
+print(f"GPU name: {torch.cuda.get_device_name(0)}")
+----
++
+This confirms the Data Science stack (PyTorch + CUDA) can see the reserved GPU -- the same experience a data scientist would have on a real GPU cluster.
 
 === Verify
 
-&#10003; Workbench started with a GPU Hardware Profile +
-&#10003; Pod spec shows GPU resource requests +
-&#10003; Workload admitted by the correct Kueue queue
+&#10003; Workbench started with the **Reserved GPU** Hardware Profile +
+&#10003; `nvidia-smi` shows GPU info from both CLI and inside the notebook +
+&#10003; Workload admitted to the `reserved` queue +
+&#10003; PyTorch detects the GPU inside the workbench
 
 == Exercise 4: Observe profile lifecycle
 
@@ -197,17 +259,17 @@ In the OpenShift AI dashboard, stop and delete the `gpu-workbench` workbench fro
 
 **What you accomplished:**
 
-* Checked the Hardware Profiles created by your GPU reservation in Module 2
+* Created a GPU reservation and inspected the Hardware Profiles it generates
 * Explored the default and reservation-created Hardware Profiles
-* Launched an RHOAI workbench using a GPU Hardware Profile
-* Verified GPU resource allocation through Kueue queue admission
+* Launched an RHOAI workbench using the reserved GPU Hardware Profile
+* Verified GPU access from the CLI, the JupyterLab terminal, and from PyTorch
 * Understood the profile lifecycle tied to booking reservations
 
 **Key takeaways:**
 
-* Hardware Profiles bridge RHOAI's workbench UI and Kueue's scheduling system
-* Default profiles provide unreserved GPU access; reservation profiles get protected quota
+* Hardware Profiles bridge **GPU as a Service** (booking + Kueue) and **Data Science** (workbenches + notebooks)
+* The reserved profile directs workloads to your protected ClusterQueue -- the data scientist doesn't need to know about Kueue
+* `nvidia-smi` and PyTorch work inside the workbench exactly as they would on a real GPU cluster
 * The booking app creates and removes profiles automatically as reservations change
-* Users select GPU types through the familiar RHOAI workbench interface without needing to know Kueue details
 
 **Next:** Module 4 dives into Kueue concepts -- ClusterQueues, Cohorts, and the resource sharing model.
