@@ -189,7 +189,7 @@ helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-{user-
   | oc -n user-{user-user1} apply -f-
 ----
 +
-image::fake-gpu-operator.png[Fake GPU Operator Components,link=self,window=blank,width=700]
+image::book-4-gpu.png[4 GPUs Booked,link=self,window=blank,width=700]
 +
 You should see 2 green colored slots for the 2 GPUs you consumed and your reserved slots should now be 2 red colored slots. The Booking App refreshes screen every 10 seconds, else use the refresh button in the top right of the screen.
 
