@@ -320,25 +320,35 @@ nvidia-smi
 ----
 +
 You should see the same GPU information as the CLI check above.
++
+image::notebook-fake-gpus.png[Notebook fake GPU,link=self,window=blank,width=700]
 
-. In a new **Notebook**, run a quick PyTorch GPU check:
+. To prove these are fake GPUs, open a **Notebook** in JupyterLab and run:
 +
 [source,python]
 ----
 import torch
 print(f"CUDA available: {torch.cuda.is_available()}")
 print(f"GPU count: {torch.cuda.device_count()}")
-print(f"GPU name: {torch.cuda.get_device_name(0)}")
 ----
 +
-This confirms the Data Science stack (PyTorch + CUDA) can see the reserved GPU -- the same experience a data scientist would have on a real GPU cluster.
+Expected output:
++
+[source,text]
+----
+CUDA available: False
+GPU count: 0
+----
++
+PyTorch reports no CUDA GPUs because there are no real NVIDIA drivers on the node. The `nvidia-smi` binary works because the fake-gpu-operator injects its own implementation -- but the CUDA runtime is not fooled. On a real GPU cluster, PyTorch would report `CUDA available: True` and detect the GPU normally.
++
+image::notebook-fake-gpu-torch.png[Notebook fake GPU Torch check,link=self,window=blank,width=700]
 
 === Verify
 
 &#10003; Workbench started with the **Reserved GPU** Hardware Profile +
 &#10003; `nvidia-smi` shows GPU info from both CLI and inside the notebook +
-&#10003; Workload admitted to the `reserved` queue +
-&#10003; PyTorch detects the GPU inside the workbench
+&#10003; Workload admitted to the `reserved` queue
 
 == Exercise 4: Observe profile lifecycle
 
