@@ -224,6 +224,11 @@ oc -n redhat-ods-applications get hardwareprofile cpu-only -o yaml
 
 == Exercise 3: Launch a workbench with the reserved GPU profile
 
+[IMPORTANT]
+====
+**Acting as: `{user-user1}`**
+====
+
 This is where GPU as a Service connects to the Data Science workflow. Your GPU reservation created a `reserved-gpu` Hardware Profile -- now you'll use it to launch a workbench with guaranteed GPU access.
 
 . Open the Red Hat OpenShift AI dashboard:
