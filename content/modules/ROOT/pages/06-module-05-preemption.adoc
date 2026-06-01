@@ -23,7 +23,7 @@ Once users have reserved GPUs through the booking app, the Kueue resource hierar
 
 image::kueue-with-reservations.png[Kueue Hierarchy with Reservations,link=self,window=blank,width=700]
 
-The red LocalQueues (`user-admin`, `user-admin1`) point to per-user ClusterQueues with `reclaimWithinCohort: Any`. The unreserved ClusterQueue's `nominalQuota` has been reduced from 8 to 5 GPUs to account for the 3 GPUs reserved.
+The red LocalQueues (`user-{user-1}`, `user-{user-2}`) point to per-user ClusterQueues with `reclaimWithinCohort: Any`. The unreserved ClusterQueue's `nominalQuota` has been reduced from 8 to 5 GPUs to account for the 3 GPUs reserved.
 
 == How preemption works in this environment
 
@@ -44,29 +44,41 @@ The `unreserved` ClusterQueue has no reclaim rights, so its workloads can always
 
 == Exercise 1: Fill the cluster with unreserved workloads
 
+[IMPORTANT]
+====
+**Acting as: `{user-1}`** +
+Log in to the OpenShift CLI:
+
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u {user-1} -p {password}
+----
+====
+
 First, let's consume GPU resources with unreserved workloads.
 
 . Deploy an unreserved workload requesting 8 full GPUs (all available):
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-admin \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-{user-1} \
   --set kind=Deployment \
   --set name=gpu-fake-gpu \
   --set replicas=1 \
   --set gpuCount=8 \
   --set gpuResourceType=nvidia.com/gpu \
   --set reserved=false \
-  | oc -n user-admin apply --as=admin -f-
+  | oc -n user-{user-1} apply -f-
 ----
 
 . Wait for the deployment to be ready:
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-oc -n user-admin rollout status deployment/gpu-fake-gpu --timeout=60s
+oc -n user-{user-1} rollout status deployment/gpu-fake-gpu --timeout=60s
 ----
 
 . Verify all GPUs are consumed:
@@ -80,9 +92,9 @@ oc get clusterqueue unreserved -o jsonpath='{.status.flavorsUsage}' | jq .
 . Verify nvidia-smi shows the GPUs:
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-oc -n user-admin exec $(oc -n user-admin get pod -l app=gpu-fake-gpu -o name | head -1) -- nvidia-smi
+oc -n user-{user-1} exec $(oc -n user-{user-1} get pod -l app=gpu-fake-gpu -o name | head -1) -- nvidia-smi
 ----
 
 === Verify
@@ -92,21 +104,33 @@ oc -n user-admin exec $(oc -n user-admin get pod -l app=gpu-fake-gpu -o name | h
 
 == Exercise 2: Trigger preemption with a reserved workload
 
+[IMPORTANT]
+====
+**Acting as: `{user-2}`** +
+Log in to the OpenShift CLI:
+
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u {user-2} -p {password}
+----
+====
+
 Now deploy a reserved workload from a different user. This simulates a user with a GPU reservation claiming their resources.
 
-. Deploy a reserved workload requesting 1 GPU as a different user:
+. Deploy a reserved workload requesting 1 GPU:
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-admin1 \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-{user-2} \
   --set kind=Deployment \
   --set name=gpu-fake-gpu \
   --set replicas=1 \
   --set gpuCount=1 \
   --set gpuResourceType=nvidia.com/gpu \
   --set reserved=true \
-  | oc -n user-admin1 apply --as=admin1 -f-
+  | oc -n user-{user-2} apply -f-
 ----
 
 . Watch the preemption happen:
@@ -135,18 +159,18 @@ ADMITTED:.status.conditions[0].status
 . Verify the reserved workload is running:
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-oc -n user-admin1 rollout status deployment/gpu-fake-gpu --timeout=60s
+oc -n user-{user-2} rollout status deployment/gpu-fake-gpu --timeout=60s
 ----
 
 . Check nvidia-smi on both workloads:
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-oc -n user-admin exec $(oc -n user-admin get pod -l app=gpu-fake-gpu -o name | head -1) -- nvidia-smi
-oc -n user-admin1 exec $(oc -n user-admin1 get pod -l app=gpu-fake-gpu -o name | head -1) -- nvidia-smi
+oc -n user-{user-1} exec $(oc -n user-{user-1} get pod -l app=gpu-fake-gpu -o name | head -1) -- nvidia-smi
+oc -n user-{user-2} exec $(oc -n user-{user-2} get pod -l app=gpu-fake-gpu -o name | head -1) -- nvidia-smi
 ----
 
 === Verify
@@ -159,59 +183,83 @@ oc -n user-admin1 exec $(oc -n user-admin1 get pod -l app=gpu-fake-gpu -o name |
 
 Preemption also works with MIG partitions. Let's test with MIG-1g.18gb devices.
 
+[IMPORTANT]
+====
+**Acting as: `{user-1}`** +
+Switch to the {user-1} CLI context:
+
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u {user-1} -p {password}
+----
+====
+
 . Deploy an unreserved workload consuming 16 MIG-1g.18gb partitions:
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-admin \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-{user-1} \
   --set kind=Deployment \
   --set name=gpu-fake-18gb \
   --set replicas=1 \
   --set gpuCount=16 \
   --set gpuResourceType=nvidia.com/mig-1g.18gb \
   --set reserved=false \
-  | oc -n user-admin apply --as=admin -f-
+  | oc -n user-{user-1} apply -f-
 ----
 
 . Wait for deployment:
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-oc -n user-admin rollout status deployment/gpu-fake-18gb --timeout=60s
+oc -n user-{user-1} rollout status deployment/gpu-fake-18gb --timeout=60s
 ----
+
+[IMPORTANT]
+====
+**Acting as: `{user-2}`** +
+Switch to the {user-2} CLI context:
+
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u {user-2} -p {password}
+----
+====
 
 . Deploy a reserved workload requesting 8 MIG partitions:
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-admin1 \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-{user-2} \
   --set kind=Deployment \
   --set name=gpu-fake-18gb \
   --set replicas=1 \
   --set gpuCount=8 \
   --set gpuResourceType=nvidia.com/mig-1g.18gb \
   --set reserved=true \
-  | oc -n user-admin1 apply --as=admin1 -f-
+  | oc -n user-{user-2} apply -f-
 ----
 
 . Watch preemption and verify both are running:
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-oc -n user-admin1 rollout status deployment/gpu-fake-18gb --timeout=60s
+oc -n user-{user-2} rollout status deployment/gpu-fake-18gb --timeout=60s
 ----
 
 . Check nvidia-smi on the MIG workloads:
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-oc -n user-admin exec $(oc -n user-admin get pod -l app=gpu-fake-18gb -o name | head -1) -- nvidia-smi
-oc -n user-admin1 exec $(oc -n user-admin1 get pod -l app=gpu-fake-18gb -o name | head -1) -- nvidia-smi
+oc -n user-{user-1} exec $(oc -n user-{user-1} get pod -l app=gpu-fake-18gb -o name | head -1) -- nvidia-smi
+oc -n user-{user-2} exec $(oc -n user-{user-2} get pod -l app=gpu-fake-18gb -o name | head -1) -- nvidia-smi
 ----
 +
 Notice the MIG partition size (18 GB) shown in nvidia-smi output.
@@ -223,15 +271,48 @@ Notice the MIG partition size (18 GB) shown in nvidia-smi output.
 
 == Exercise 4: Clean up all workloads
 
-. Remove all test deployments:
+=== {user-1}: Delete workloads
+
+[IMPORTANT]
+====
+**Acting as: `{user-1}`**
+
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u {user-1} -p {password}
+----
+====
+
+. Remove {user-1}'s test deployments:
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-oc -n user-admin delete deployment gpu-fake-gpu
-oc -n user-admin delete deployment gpu-fake-18gb
-oc -n user-admin1 delete deployment gpu-fake-gpu
-oc -n user-admin1 delete deployment gpu-fake-18gb
+oc -n user-{user-1} delete deployment gpu-fake-gpu
+oc -n user-{user-1} delete deployment gpu-fake-18gb
+----
+
+=== {user-2}: Delete workloads
+
+[IMPORTANT]
+====
+**Acting as: `{user-2}`**
+
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u {user-2} -p {password}
+----
+====
+
+. Remove {user-2}'s test deployments:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc -n user-{user-2} delete deployment gpu-fake-gpu
+oc -n user-{user-2} delete deployment gpu-fake-18gb
 ----
 
 . Verify all GPU resources are free:

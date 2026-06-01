@@ -44,6 +44,12 @@ When you make a reservation, the app creates Kueue resources that give your work
 
 == Exercise 1: Open the GPU Booking App
 
+[IMPORTANT]
+====
+**Acting as: `{user-1}`** +
+Log in to the OpenShift Console at `{openshift_console_url}` with username `{user-1}` and password `{password}`.
+====
+
 . In the OpenShift Console, navigate to the GPU Booking plugin. Look for **GPU Booking** in the console navigation menu.
 
 . Explore the calendar interface:
@@ -82,14 +88,14 @@ The booking should appear as a colored slot in the calendar.
 oc get clusterqueues
 ----
 +
-You should see a new ClusterQueue named after your user (e.g., `user-{user}`).
+You should see a new ClusterQueue named after your user (e.g., `user-{user-1}`).
 
 . Inspect your user's ClusterQueue:
 +
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc get clusterqueue user-{user} -o yaml | grep -A 20 "resourceGroups"
+oc get clusterqueue user-{user-1} -o yaml | grep -A 20 "resourceGroups"
 ----
 +
 The `nominalQuota` shows the GPU resources you reserved -- this is your protected allocation.
@@ -99,7 +105,7 @@ The `nominalQuota` shows the GPU resources you reserved -- this is your protecte
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user} get localqueues
+oc -n user-{user-1} get localqueues
 ----
 +
 You should see a new LocalQueue pointing to your user's ClusterQueue.
@@ -165,7 +171,7 @@ When you make a reservation, the booking app also creates RHOAI Hardware Profile
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user} get hardwareprofiles
+oc -n user-{user-1} get hardwareprofiles
 ----
 
 . Inspect a Hardware Profile:
@@ -173,7 +179,7 @@ oc -n {user} get hardwareprofiles
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user} get hardwareprofiles -o yaml | grep -A 15 "spec:"
+oc -n user-{user-1} get hardwareprofiles -o yaml | grep -A 15 "spec:"
 ----
 +
 Each HardwareProfile specifies CPU, memory, and GPU resource limits that match a Kueue queue.

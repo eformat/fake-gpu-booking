@@ -7,8 +7,8 @@ In this activity, you will connect to your workshop environment and verify acces
 
 [IMPORTANT]
 ====
-**Acting as: `prelude`** (cluster admin) +
-Log in to the OpenShift Console at `{openshift_console_url}` with username `prelude` and password `{password}`.
+**Acting as: `{user-admin}`** (cluster admin) +
+Log in to the OpenShift Console at `{openshift_console_url}` with username `{user-admin}` and password `{password}`.
 ====
 
 . Open the OpenShift Console in the right panel or navigate to:
@@ -17,7 +17,7 @@ Log in to the OpenShift Console at `{openshift_console_url}` with username `prel
 
 . Log in with the following credentials:
 +
-**Username:** `prelude` +
+**Username:** `{user-admin}` +
 **Password:** `{password}`
 
 == Log in from the command line
@@ -29,7 +29,7 @@ Log in to the OpenShift Console at `{openshift_console_url}` with username `prel
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc login {openshift_api_url} -u prelude -p {password}
+oc login {openshift_api_url} -u {user-admin} -p {password}
 ----
 
 . Verify your identity:
@@ -108,15 +108,15 @@ Or click **Red Hat OpenShift AI** in the right panel tabs.
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc project {user}
+oc project user-{user-1}
 ----
 
 . Check LocalQueues in the user namespace:
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-oc -n {user} get localqueues
+oc -n user-{user-1} get localqueues
 ----
 +
 You should see `default` and `unreserved` LocalQueues.
