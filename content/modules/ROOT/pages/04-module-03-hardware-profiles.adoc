@@ -80,7 +80,7 @@ oc get hardwareprofiles -A
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n user-{user-1} get hardwareprofile unreserved-gpu -o yaml
+oc -n {user-user-1} get hardwareprofile unreserved-gpu -o yaml
 ----
 +
 Note the `spec.resources` section showing CPU, memory, and GPU limits.
@@ -90,7 +90,7 @@ Note the `spec.resources` section showing CPU, memory, and GPU limits.
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n user-{user-1} get hardwareprofile default-profile -o yaml
+oc -n {user-user-1} get hardwareprofile default-profile -o yaml
 ----
 
 === Verify
@@ -103,7 +103,7 @@ oc -n user-{user-1} get hardwareprofile default-profile -o yaml
 
 . Open the OpenShift AI dashboard.
 
-. Navigate to **Data Science Projects** and select your project (`user-{user-1}`).
+. Navigate to **Data Science Projects** and select your project (`{user-user-1}`).
 
 . Click **Create workbench** and configure:
 * **Name:** `gpu-workbench`
@@ -117,7 +117,7 @@ oc -n user-{user-1} get hardwareprofile default-profile -o yaml
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n user-{user-1} get pod -l app=gpu-workbench -o jsonpath='{.items[0].spec.containers[0].resources}' | jq .
+oc -n {user-user-1} get pod -l app=gpu-workbench -o jsonpath='{.items[0].spec.containers[0].resources}' | jq .
 ----
 +
 You should see the GPU resource in both requests and limits.
@@ -127,7 +127,7 @@ You should see the GPU resource in both requests and limits.
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n user-{user-1} get workloads -o custom-columns=\
+oc -n {user-user-1} get workloads -o custom-columns=\
 NAME:.metadata.name,\
 QUEUE:.spec.queueName,\
 ADMITTED:.status.conditions[0].status
@@ -152,7 +152,7 @@ Hardware Profiles created by the booking app follow the reservation lifecycle:
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n user-{user-1} get hardwareprofiles -w
+oc -n {user-user-1} get hardwareprofiles -w
 ----
 +
 Leave this running in a terminal and observe as reservations change. Press `Ctrl+C` to stop watching.
