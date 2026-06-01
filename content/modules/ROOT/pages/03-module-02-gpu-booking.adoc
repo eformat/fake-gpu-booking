@@ -72,6 +72,13 @@ Log in to the OpenShift Console at `{openshift_console_url}` with username `{use
 &#10003; GPU Booking App is accessible in the console +
 &#10003; Calendar shows GPU resource types and availability
 
+[NOTE]
+====
+The GPU Booking App has extensive help documentation available in the OpenShift Console. This is a great way to learn about the app and how to use it.
+
+image::booking-app-help.png[Booking Sync Lifecycle,link=self,window=blank,width=700]
+====
+
 == Exercise 2: Create a GPU reservation
 
 . In the booking calendar, select today's date by clicking on it.
