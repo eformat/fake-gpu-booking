@@ -4,9 +4,11 @@
 :toclevels: 1
 :icons: font
 
-The fake-gpu-operator is a lightweight Kubernetes operator that simulates NVIDIA GPUs on CPU-only nodes. It provides a device plugin, metrics exporter, and nvidia-smi emulation -- everything Kubernetes needs to schedule GPU workloads without real hardware.
+The [fake-gpu-operator](https://github.com/run-ai/fake-gpu-operator) is a lightweight Kubernetes operator that simulates NVIDIA GPUs on CPU-only nodes. It provides a device plugin, metrics exporter, and nvidia-smi emulation -- everything Kubernetes needs to schedule GPU workloads without real hardware.
 
 The good news is that everything you learn in this module can be applied to a real GPU cluster. The commands and output you see in this module are the same as you would see in a real GPU cluster. You'll be able to inspect the GPU topology, deploy pods with fake GPUs, and use nvidia-smi inside fake GPU pods.
+
+All of the workloads we deploy in this module do nothing but `sleep` -- they are simply used to verify that the fake GPUs are working as expected. Even the `nvidia-smi` command used to verify that the fake GPUs are working is a fake `nvidia-smi` command injected into the pod by the fake-gpu-operator. Within a pod, there is no real nvidia GPU device or socket to connect to -- it is all simulated.
 
 In this module, you'll explore how the operator works, inspect the simulated GPU topology, and verify that pods can request and consume fake GPU resources.
 
