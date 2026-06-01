@@ -11,8 +11,8 @@ asciidoc:
     page-pagination: true
     lab_name: "GPU Resource Management on OpenShift"
     user-admin: prelude
-    user-1: user1
-    user-2: user2
+    user-user1: user1
+    user-user2: user2
     password: "%password%"
     openshift_api_url: "https://api.cluster.example.com:6443"
     openshift_console_url: "https://console-openshift-console.apps.cluster.example.com"
