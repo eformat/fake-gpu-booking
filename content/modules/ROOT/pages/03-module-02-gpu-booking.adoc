@@ -4,7 +4,7 @@
 :toclevels: 1
 :icons: font
 
-The GPU Booking App is an OpenShift Console dynamic plugin that provides a calendar interface for reserving GPU resources. It integrates with Kueue to automatically provision per-user ClusterQueues, LocalQueues, and Hardware Profiles based on bookings.
+The https://github.com/rhai-code/gpu-booking-app-plugin[GPU Booking App^] is an OpenShift Console dynamic plugin that provides a calendar interface for reserving GPU resources. It integrates with https://kueue.sigs.k8s.io/docs/overview[Kueue^] to automatically provision per-user ClusterQueues, LocalQueues, and Hardware Profiles based on bookings.
 
 In this module, you'll use the booking interface to reserve GPU time, observe the Kueue resources it creates, and understand the difference between reserved and consumed bookings.
 
@@ -42,12 +42,16 @@ The booking app has three sync loops that run continuously:
 
 When you make a reservation, the app creates Kueue resources that give your workloads **protected quota** -- they cannot be preempted by unreserved workloads.
 
+We have configured reservation guarantees to ensure that user reservations are not preempted by unreserved workloads. This is a design choice to ensure that users can reserve GPUs for their own use and not have them taken away by other users whilst allowing unreserved workloads to run when resources are available.
+
+Other designs are possible, the Booking App is one of many possible implementations of the Kueue Cohort model. We cover the Kueue Cohort model in more detail in Module 4.
+
 == Exercise 1: Open the GPU Booking App
 
 [IMPORTANT]
 ====
-**Acting as: `{user-1}`** +
-Log in to the OpenShift Console at `{openshift_console_url}` with username `{user-1}` and password `{password}`.
+**Acting as: `{user-user1}`** +
+Log in to the OpenShift Console at `{openshift_console_url}` with username `{user-user1}` and password `{password}`.
 ====
 
 . In the OpenShift Console, navigate to the GPU Booking plugin. Look for **GPU Booking** in the console navigation menu.
