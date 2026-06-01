@@ -46,13 +46,13 @@ The `unreserved` ClusterQueue has no reclaim rights, so its workloads can always
 
 [IMPORTANT]
 ====
-**Acting as: `{user-1}`** +
+**Acting as: `{user-user1}`** +
 Log in to the OpenShift CLI:
 
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc login {openshift_api_url} -u {user-1} -p {password}
+oc login {openshift_api_url} -u {user-user1} -p {password}
 ----
 ====
 
@@ -185,13 +185,13 @@ Preemption also works with MIG partitions. Let's test with MIG-1g.18gb devices.
 
 [IMPORTANT]
 ====
-**Acting as: `{user-1}`** +
-Switch to the {user-1} CLI context:
+**Acting as: `{user-user1}`** +
+Switch to the {user-user1} CLI context:
 
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc login {openshift_api_url} -u {user-1} -p {password}
+oc login {openshift_api_url} -u {user-user1} -p {password}
 ----
 ====
 
@@ -271,20 +271,20 @@ Notice the MIG partition size (18 GB) shown in nvidia-smi output.
 
 == Exercise 4: Clean up all workloads
 
-=== {user-1}: Delete workloads
+=== {user-user1}: Delete workloads
 
 [IMPORTANT]
 ====
-**Acting as: `{user-1}`**
+**Acting as: `{user-user1}`**
 
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc login {openshift_api_url} -u {user-1} -p {password}
+oc login {openshift_api_url} -u {user-user1} -p {password}
 ----
 ====
 
-. Remove {user-1}'s test deployments:
+. Remove {user-user1}'s test deployments:
 +
 [.copypaste]
 [source,bash,subs="attributes"]

@@ -73,13 +73,13 @@ With this design, we can complement the Kueue Cohort model with other CQ's. One 
 
 [IMPORTANT]
 ====
-**Acting as: `{user-1}`** +
+**Acting as: `{user-user1}`** +
 Log in to the OpenShift CLI:
 
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc login {openshift_api_url} -u {user-1} -p {password}
+oc login {openshift_api_url} -u {user-user1} -p {password}
 ----
 ====
 
