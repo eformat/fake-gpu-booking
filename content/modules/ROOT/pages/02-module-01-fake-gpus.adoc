@@ -169,7 +169,7 @@ You should see simulated NVIDIA GPU information for the active profile -- produc
 [.copypaste]
 [source,bash]
 ----
-oc describe node -l nvidia.com/gpu.present=true | grep -A 5 "Allocated resources"
+oc describe node -l nvidia.com/gpu.present=true | grep -A 15 "Allocated resources"
 ----
 + 
 You should see the GPU resource request and limits - usage - on the node.
@@ -218,9 +218,9 @@ oc -n user-{user-user1} wait pod/mig-test --for=condition=Ready --timeout=60s
 oc -n user-{user-user1} exec mig-test -- nvidia-smi
 ----
 +
-Notice the nvidia-smi output shows the MIG partition size rather than the full GPU memory.
+Notice the nvidia-smi output shows the MIG partition size `10240MiB` rather than the full GPU memory.
 +
-NOTE: MIG resource types vary by GPU profile. If your cluster is running a non-MIG profile (L40S, T4), skip this exercise or first switch to a MIG-capable profile using the GPU Config Plugin.
+NOTE: MIG resource types vary by GPU profile. If your cluster is running a non-MIG profile (L40S, T4), first switch to a MIG-capable profile using the GPU Config Plugin. See the Quickstart module for more details.
 
 . Clean up both test pods:
 +
@@ -232,7 +232,7 @@ oc -n user-{user-user1} delete pod gpu-test mig-test
 
 === Verify
 
-&#10003; MIG pod started with `nvidia.com/mig-1g.18gb` resource +
+&#10003; MIG pod started with `nvidia.com/mig-1g.10gb` resource +
 &#10003; nvidia-smi shows MIG partition info +
 &#10003; Both pods cleaned up
 
