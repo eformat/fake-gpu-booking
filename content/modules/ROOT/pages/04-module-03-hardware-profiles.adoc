@@ -244,9 +244,33 @@ Log in as `{user-user1}` with password `{password}`.
 * **Image Selection:** Training | Jupyter | PyTorch | CUDA | Python
 * **Hardware Profile:** Select **Reserved GPU** (Project-scoped)
 +
-The **Reserved GPU** profile appears because you created a reservation in Exercise 1. It targets your user-specific ClusterQueue with protected `nominalQuota`, meaning your workbench GPU cannot be preempted by unreserved workloads.
+The **Reserved GPU** profile appears because you created a reservation in Exercise 1. It targets your user-specific ClusterQueue with protected `nominalQuota`, meaning your workbench GPU cannot be preempted by unreserved workloads. Choose one of the reserved profiles from the list.
++ image::reserved-hwprofiles.png[Reserved GPU Hardware Profiles,link=self,window=blank,width=700]
 
 . Click **Create workbench** and wait for it to reach **Ready** status.
+
+=== Patch the workbench for fake nvidia-smi
+
+The fake-gpu-operator's `nvidia-smi` binary needs the `NODE_NAME` environment variable to look up the GPU topology for the node. RHOAI workbenches don't set this by default, so we need to patch the Notebook CR to inject it.
+
+. Patch the workbench to add the `NODE_NAME` environment variable:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc -n user-{user-user1} patch notebook gpu-workbench --type='json' \
+  -p='[{"op":"add","path":"/spec/template/spec/containers/0/env/-","value":{"name":"NODE_NAME","valueFrom":{"fieldRef":{"fieldPath":"spec.nodeName"}}}}]'
+----
++
+This triggers a rolling restart of the workbench pod. Wait for it to reach **Ready** status again:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc -n user-{user-user1} rollout status statefulset/gpu-workbench --timeout=120s
+----
+
+NOTE: This patch is only needed because we are using the fake-gpu-operator. On a real GPU cluster with physical NVIDIA GPUs, `nvidia-smi` works without any extra environment variables.
 
 === Verify GPU access from the workbench
 
@@ -258,7 +282,7 @@ The **Reserved GPU** profile appears because you created a reservation in Exerci
 oc -n user-{user-user1} exec $(oc -n user-{user-user1} get pod -l app=gpu-workbench -o name) -- nvidia-smi
 ----
 +
-You should see the simulated NVIDIA GB200 NVL GPU with its memory and utilization. This confirms the fake-gpu-operator injected `nvidia-smi` into the workbench pod and the GPU resource is allocated.
+You should see the matching GPU resource you selected as a hardware profile. This confirms the fake-gpu-operator injected `nvidia-smi` into the workbench pod and the GPU resource is allocated.
 
 . Verify that the workload was admitted to the **reserved** queue, not the unreserved pool:
 +
