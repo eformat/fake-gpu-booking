@@ -19,6 +19,11 @@ By the end of this module, you'll be able to:
 * Deploy a pod that requests fake GPU resources
 * Use nvidia-smi inside a fake GPU pod
 
+[NOTE]
+====
+The exercises below use the **NVIDIA GB200 NVL** profile. If you are not using this profile, you will need to switch to it using the GPU Config Plugin. See the Quickstart module for more details. You may use other profiles if you wish - however you will need to adjust the commands accordingly.
+====
+
 == How does the fake-gpu-operator work?
 
 image::fake-gpu-operator.png[Fake GPU Operator Components,link=self,window=blank,width=700]
@@ -47,13 +52,13 @@ TIP: Use the **GPU Config Plugin** in the OpenShift Console (**GPU Configuration
 
 [IMPORTANT]
 ====
-**Acting as: `{user-1}`** +
+**Acting as: `{user-admin}`** +
 Log in to the OpenShift CLI:
 
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc login {openshift_api_url} -u {user-1} -p {password}
+oc login {openshift_api_url} -u {user-admin} -p {password}
 ----
 ====
 
@@ -64,6 +69,8 @@ oc login {openshift_api_url} -u {user-1} -p {password}
 ----
 oc get nodes -l nvidia.com/gpu.present=true --show-labels | grep -o 'nvidia[^ ]*'
 ----
++
+You should see a number of node labels including `nvidia.com/gpu.present=true` and `run.ai/simulated-gpu-node-pool=<pool-name>`.
 
 . Check the GPU capacity reported by the node:
 +
@@ -83,6 +90,7 @@ You should see the active GPU profile name and 8 full GPUs. MIG resources depend
 ----
 oc get pods -n gpu-operator
 ----
++ You should see a number of pods including `device-plugin-<hash>`, `topology-server-<hash>`, and `gpu-node-labeler-<hash>`.
 
 . Inspect the node allocatable resources:
 +
@@ -92,7 +100,8 @@ oc get pods -n gpu-operator
 oc get $(oc get node -o name) -o=jsonpath='{.status.allocatable}' | jq .
 ----
 +
-You should see cpu, memory, and nvidia.com/gpu resource counts. If you see nvidia.com/mig-1g.18gb, nvidia.com/mig-2g.35gb, and nvidia.com/mig-3g.71gb resource counts, then you are running a MIG-capable profile.
+You should see cpu, memory, pods and nvidia.com/gpu resource counts. If you see nvidia.com/mig-* resource counts, then you are running a MIG-capable profile.
+
 The MIG resources may be present but show "0" as the count. This is expected from any prior MIG profiles that have been set and are no longer in use. They only reset when the Kubelet is restarted on the node.
 
 === Verify
@@ -102,6 +111,18 @@ The MIG resources may be present but show "0" as the count. This is expected fro
 &#10003; Fake GPU operator pods are running
 
 == Exercise 2: Deploy a pod with fake GPUs
+
+[IMPORTANT]
+====
+**Acting as: `{user-1}`** +
+Switch to the {user-1} CLI context:
+
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc login {openshift_api_url} -u {user-1} -p {password}
+----
+====
 
 . Deploy a simple pod requesting one full GPU:
 +
@@ -136,6 +157,11 @@ oc -n user-{user-1} exec gpu-test -- nvidia-smi
 +
 You should see simulated NVIDIA GPU information for the active profile -- product name, memory, and utilization -- even though no real GPU exists.
 
+[IMPORTANT]
+====
+**Acting as: `{user-admin}`**
+====
+
 . Check the GPU resource usage on the node:
 +
 [.copypaste]
@@ -143,6 +169,8 @@ You should see simulated NVIDIA GPU information for the active profile -- produc
 ----
 oc describe node -l nvidia.com/gpu.present=true | grep -A 5 "Allocated resources"
 ----
++ 
+You should see the GPU resource request and limits - usage - on the node.
 
 === Verify
 
@@ -151,6 +179,11 @@ oc describe node -l nvidia.com/gpu.present=true | grep -A 5 "Allocated resources
 &#10003; Node shows GPU allocation
 
 == Exercise 3: Test MIG partitions
+
+[IMPORTANT]
+====
+**Acting as: `{user-user1}`**
+====
 
 . Deploy a pod requesting a MIG 1g.18gb partition:
 +
@@ -162,7 +195,7 @@ helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-{user-
   --set name=mig-test \
   --set replicas=1 \
   --set gpuCount=1 \
-  --set gpuResourceType=nvidia.com/mig-1g.18gb \
+  --set gpuResourceType=nvidia.com/mig-1g.10gb \
   --set reserved=false \
   | oc -n user-{user-1} apply -f-
 ----
