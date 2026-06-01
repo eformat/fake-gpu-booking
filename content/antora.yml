@@ -10,7 +10,7 @@ asciidoc:
     experimental: true
     page-pagination: true
     lab_name: "GPU Resource Management on OpenShift"
-    user-admin: prelude
+    user-admin: admin
     user-user1: user1
     user-user2: user2
     password: "%password%"
