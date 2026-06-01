@@ -22,6 +22,11 @@ By the end of this module, you'll be able to:
 * Explain the difference between reserved and consumed bookings
 * Inspect the Kueue resources created by the reservation sync
 
+[NOTE]
+====
+The exercises below use the **NVIDIA GB200 NVL** profile. If you are not using this profile, you will need to switch to it using the GPU Config Plugin. See the Quickstart module for more details. You may use other profiles if you wish - however you will need to adjust the commands accordingly.
+====
+
 == How the booking app works
 
 image::booking-sync-lifecycle.png[Booking Sync Lifecycle,link=self,window=blank,width=700]
@@ -51,6 +56,11 @@ We have configured reservation guarantees to ensure that user reservations are n
 
 Other designs are possible, the Booking App is one of many possible implementations of the Kueue Cohort model. We cover the Kueue Cohort model in more detail in Module 4.
 
+[NOTE]
+====
+The exercises below use the **NVIDIA GB200 NVL** profile. If you are not using this profile, you will need to switch to it using the GPU Config Plugin. See the Quickstart module for more details. You may use other profiles if you wish - however you will need to adjust the commands accordingly.
+====
+
 == Exercise 1: Open the GPU Booking App
 
 [IMPORTANT]
@@ -66,11 +76,12 @@ Log in to the OpenShift Console at `{openshift_console_url}` with username `{use
 * Each GPU resource type has its own row
 * Color-coded slots show reserved (user bookings) vs. consumed (actual usage)
 
-. Review the available GPU resource types:
-* **H200 Full GPU** -- `nvidia.com/gpu` (8 available)
-* **MIG 3g.71gb** -- `nvidia.com/mig-3g.71gb` (8 available)
-* **MIG 2g.35gb** -- `nvidia.com/mig-2g.35gb` (8 available)
-* **MIG 1g.18gb** -- `nvidia.com/mig-1g.18gb` (16 available)
+. Review the available GPU resource types (this will depend on the GPU profile you are using):
+* **GB200 NVL Full GPU** -- `nvidia.com/gpu` (8 available)
+* **MIG 7g.80gb** -- `nvidia.com/mig-7g.40gb` (8 available)
+* **MIG 3g.20gb** -- `nvidia.com/mig-3g.20gb` (16 available)
+* **MIG 2g.10gb** -- `nvidia.com/mig-2g.10gb` (16 available)
+* **MIG 1g.10gb** -- `nvidia.com/mig-1g.10gb` (56 available)
 
 === Verify
 
@@ -88,7 +99,7 @@ image::booking-app-help.png[Booking Sync Lifecycle,link=self,window=blank,width=
 
 . In the booking calendar, select today's date by clicking on it.
 
-. Choose a GPU resource type (e.g., **H200 Full GPU**).
+. Choose a GPU resource type (e.g., **GB200 NVL Full GPU**).
 
 . Set the number of GPUs you want to reserve (start with 1).
 
@@ -125,6 +136,12 @@ oc -n user-{user-user1} get localqueues
 ----
 +
 You should see a new LocalQueue pointing to your user's ClusterQueue.
+
+You can also bulk book reservations of multiple GPUs and MIG partitions by right clicking on the calendar.
+
+image::booking-app-help.png[Booking Sync Lifecycle,link=self,window=blank,width=700]
+
+Select the number of GPUs and MIG partitions you want to reserve, add a description so other users can understand your booking and click **Book** to create the booking.
 
 === Verify
 
