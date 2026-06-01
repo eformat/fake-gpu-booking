@@ -244,10 +244,19 @@ Log in as `{user-user1}` with password `{password}`.
 * **Image Selection:** Training | Jupyter | PyTorch | CUDA | Python
 * **Hardware Profile:** Select **Reserved GPU** (Project-scoped)
 +
-The **Reserved GPU** profile appears because you created a reservation in Exercise 1. It targets your user-specific ClusterQueue with protected `nominalQuota`, meaning your workbench GPU cannot be preempted by unreserved workloads. Choose one of the reserved profiles from the list.
-+ image::reserved-hwprofiles.png[Reserved GPU Hardware Profiles,link=self,window=blank,width=700]
+The **Reserved GPU** profile appears because you created a reservation in Exercise 1. It targets your user-specific ClusterQueue with protected `nominalQuota`, meaning your workbench GPU cannot be preempted by unreserved workloads.
++
+image::reserved-hwprofiles.png[Reserved GPU Hardware Profiles,link=self,window=blank,width=700]
+
+. Expand **Customize resource requests and limits** to request more than the default 1 GPU.
++
+Since you reserved 8 full GPUs in Exercise 1, you can allocate multiple GPUs to a single workbench. Set the GPU count to **4** (or more, up to the `maxCount` shown in the profile). This demonstrates that a data scientist can claim a larger share of their reserved quota for intensive training workloads.
++
+image::customize-resource-requests.png[Customize resource requests and limits,link=self,window=blank,width=700]
 
 . Click **Create workbench** and wait for it to reach **Ready** status.
++
+image::hwprofiles-workbench.png[Hardware Profiles workbench,link=self,window=blank,width=700]
 
 === Patch the workbench for fake nvidia-smi
 
