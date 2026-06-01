@@ -92,7 +92,7 @@ Log in to the OpenShift Console at `{openshift_console_url}` with username `{use
 ====
 The GPU Booking App has extensive help documentation available in the OpenShift Console. This is a great way to learn about the app and how to use it.
 
-image::booking-app-help.png[Booking Sync Lifecycle,link=self,window=blank,width=700]
+image::booking-app-help.png[Booking App Help Documentation,link=self,window=blank,width=700]
 ====
 
 == Exercise 2: Create a GPU reservation
@@ -139,7 +139,7 @@ You should see a new LocalQueue pointing to your user's ClusterQueue.
 
 You can also bulk book reservations of multiple GPUs and MIG partitions by right clicking on the calendar.
 
-image::booking-app-help.png[Booking Sync Lifecycle,link=self,window=blank,width=700]
+image::bulk-booking.png[Bulk Booking,link=self,window=blank,width=700]
 
 Select the number of GPUs and MIG partitions you want to reserve, add a description so other users can understand your booking and click **Book** to create the booking.
 
