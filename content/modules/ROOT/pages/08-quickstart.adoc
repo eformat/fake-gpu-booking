@@ -391,7 +391,7 @@ Expected output:
 +
 [source,text]
 ----
-No resources found in user-user2 namespace.
+No "reserved" resources found in user-user2 namespace.
 ----
 +
 When a booking is canceled, the GPU Booking app automatically cleans up all Kueue resources it created: the per-user ClusterQueue (`user-user2`), the `reserved` LocalQueue, and any HardwareProfiles. This ensures no stale reservation state remains on the cluster.
