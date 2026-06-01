@@ -183,6 +183,11 @@ All reserved profiles should show `reserved` as their queue. This is what ties t
 
 == Exercise 2: Explore default Hardware Profiles
 
+[IMPORTANT]
+====
+**Acting as: `{user-admin}`**
+====
+
 . List all Hardware Profiles across namespaces:
 +
 [.copypaste]
@@ -190,13 +195,14 @@ All reserved profiles should show `reserved` as their queue. This is what ties t
 ----
 oc get hardwareprofiles -A
 ----
++ You should see multiple Hardware Profiles in the `redhat-ods-applications` namespace as well as the `user-{user-user1}` namespace.
 
 . Inspect the unreserved GPU profile:
 +
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n user-{user-user1} get hardwareprofile unreserved-gpu -o yaml
+oc -n redhat-ods-applications get hardwareprofile unreserved-gpu -o yaml
 ----
 +
 Note the `spec.resources` section showing CPU, memory, and GPU limits.
@@ -206,14 +212,15 @@ Note the `spec.resources` section showing CPU, memory, and GPU limits.
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n user-{user-user1} get hardwareprofile default-profile -o yaml
+oc -n redhat-ods-applications get hardwareprofile cpu-only -o yaml
 ----
++ The `cpu-only` profile has no GPU resources. It is used for CPU-only workbenches.
 
 === Verify
 
 &#10003; Multiple Hardware Profiles exist per namespace +
 &#10003; GPU profiles include `nvidia.com/gpu` or MIG resource limits +
-&#10003; Default profile has no GPU resource
+&#10003; The `cpu-only` profile has no GPU resources and is used for CPU-only workbenches
 
 == Exercise 3: Launch a workbench with the reserved GPU profile
 
