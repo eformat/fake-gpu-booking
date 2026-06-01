@@ -350,32 +350,47 @@ image::notebook-fake-gpu-torch.png[Notebook fake GPU Torch check,link=self,windo
 &#10003; `nvidia-smi` shows GPU info from both CLI and inside the notebook +
 &#10003; Workload admitted to the `reserved` queue
 
-== Exercise 4: Observe profile lifecycle
+== Exercise 4: Clean up and observe profile removal
 
-Hardware Profiles created by the booking app follow the reservation lifecycle:
+[IMPORTANT]
+====
+**Acting as: `{user-user1}`**
+====
 
-. When a reservation is active, the corresponding HardwareProfile exists in your namespace.
+Hardware Profiles created by the booking app follow the reservation lifecycle -- when a reservation is canceled, the expiration cleaner removes the corresponding ClusterQueue, LocalQueue, and HardwareProfiles. Let's observe this by cleaning up our resources.
 
-. When a reservation expires, the expiration cleaner removes the HardwareProfile as part of the two-phase drain.
+. In the OpenShift AI dashboard, stop and delete the `gpu-workbench` workbench from your project.
 
-. Watch for profile changes:
+. In the OpenShift Console, navigate to **GPU Booking** > **Bookings** and click **My Bookings**.
+
+. Click **Cancel All** to remove your GPU reservations, then click **Confirm**.
+
+. Confirm the reserved HardwareProfiles have been removed:
 +
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n user-{user-user1} get hardwareprofiles -w
+oc -n user-{user-user1} get hardwareprofiles
 ----
 +
-Leave this running in a terminal and observe as reservations change. Press `Ctrl+C` to stop watching.
+The `reserved-*` profiles should no longer appear. The booking app's expiration cleaner removed them along with the per-user ClusterQueue and LocalQueue.
 
-. Clean up the workbench when done:
+. Verify the Kueue resources are also gone:
 +
-In the OpenShift AI dashboard, stop and delete the `gpu-workbench` workbench from your project.
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc get cq,lq -A | grep user-{user-user1}
+----
++
+No output means the per-user ClusterQueue and LocalQueue have been cleaned up.
 
 === Verify
 
-&#10003; Understand that HardwareProfiles follow reservation lifecycle +
-&#10003; Workbench cleaned up
+&#10003; Workbench deleted +
+&#10003; Booking canceled +
+&#10003; `reserved-*` HardwareProfiles removed automatically +
+&#10003; Per-user ClusterQueue and LocalQueue cleaned up
 
 == Module summary
 
@@ -391,7 +406,7 @@ In the OpenShift AI dashboard, stop and delete the `gpu-workbench` workbench fro
 
 * Hardware Profiles bridge **GPU as a Service** (booking + Kueue) and **Data Science** (workbenches + notebooks)
 * The reserved profile directs workloads to your protected ClusterQueue -- the data scientist doesn't need to know about Kueue
-* `nvidia-smi` and PyTorch work inside the workbench exactly as they would on a real GPU cluster
+* `nvidia-smi` works inside workbenches via the fake-gpu-operator; real CUDA frameworks like PyTorch require physical GPUs
 * The booking app creates and removes profiles automatically as reservations change
 
 **Next:** Module 4 dives into Kueue concepts -- ClusterQueues, Cohorts, and the resource sharing model.
