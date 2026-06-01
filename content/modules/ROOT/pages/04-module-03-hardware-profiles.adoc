@@ -383,7 +383,7 @@ The `reserved-*` profiles should no longer appear. The booking app's expiration 
 oc get cq,lq -A | grep user-{user-user1}
 ----
 +
-No output means the per-user ClusterQueue and LocalQueue have been cleaned up.
+Only `unreserved` and `default` should be shown. The per-user `reserved` ClusterQueue and LocalQueue have been cleaned up.
 
 === Verify
 
