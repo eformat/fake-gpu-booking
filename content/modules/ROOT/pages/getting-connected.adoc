@@ -116,7 +116,7 @@ oc project {user-user1}
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user1} get localqueues
+oc -n user-{user-user1} get localqueues
 ----
 +
 You should see `default` and `unreserved` LocalQueues.

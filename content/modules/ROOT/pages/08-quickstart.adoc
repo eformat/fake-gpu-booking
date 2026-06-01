@@ -105,14 +105,14 @@ You should see `Login successful` and the list of accessible projects.
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n {user-user1} \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-{user-user1} \
   --set kind=Deployment \
   --set name=gpu-fake-gpu \
   --set replicas=1 \
   --set gpuCount=8 \
   --set gpuResourceType=nvidia.com/gpu \
   --set reserved=false \
-  | oc -n {user-user1} apply -f-
+  | oc -n user-{user-user1} apply -f-
 ----
 +
 Expected output:
@@ -129,7 +129,7 @@ This renders a Helm chart locally and pipes the resulting Deployment manifest in
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user1} rollout status deployment/gpu-fake-gpu --timeout=120s
+oc -n user-{user-user1} rollout status deployment/gpu-fake-gpu --timeout=120s
 ----
 +
 Expected output:
@@ -146,7 +146,7 @@ deployment "gpu-fake-gpu" successfully rolled out
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user1} exec $(oc -n {user-user1} get pod -l app=gpu-fake-gpu -o name) -- nvidia-smi
+oc -n user-{user-user1} exec $(oc -n user-{user-user1} get pod -l app=gpu-fake-gpu -o name) -- nvidia-smi
 ----
 +
 You should see 8 NVIDIA GB200 NVL GPUs listed in the `nvidia-smi` output table. Each row represents one simulated GPU with its memory usage and utilization.
@@ -309,7 +309,7 @@ oc login {openshift_api_url} -u {user-1} -p {password}
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user1} get pods
+oc -n user-{user-user1} get pods
 ----
 +
 Expected output:
@@ -352,7 +352,7 @@ Return to the RHOAI dashboard as {user-2}.
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user1} get pods
+oc -n user-{user-user1} get pods
 ----
 +
 Expected output:
@@ -384,7 +384,7 @@ image::qs-cancel-booking.png[GPU Booking My Bookings with Cancel All button,link
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user2} get cq,lq,hardwareprofile
+oc -n user-{user-user2} get cq,lq,hardwareprofile
 ----
 +
 Expected output:
@@ -422,7 +422,7 @@ oc login {openshift_api_url} -u {user-1} -p {password}
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user1} delete deployment gpu-fake-gpu
+oc -n user-{user-user1} delete deployment gpu-fake-gpu
 ----
 +
 Expected output:
@@ -450,7 +450,7 @@ oc login {openshift_api_url} -u {user-2} -p {password}
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user2} delete pvc fake-gpu-workbench-storage
+oc -n user-{user-user2} delete pvc fake-gpu-workbench-storage
 ----
 +
 Expected output:

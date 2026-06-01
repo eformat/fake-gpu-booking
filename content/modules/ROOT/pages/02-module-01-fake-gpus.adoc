@@ -131,14 +131,14 @@ oc login {openshift_api_url} -u {user-user1} -p {password}
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n {user-user1} \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-{user-user1} \
   --set kind=Pod \
   --set name=gpu-test \
   --set replicas=1 \
   --set gpuCount=1 \
   --set gpuResourceType=nvidia.com/gpu \
   --set reserved=false \
-  | oc -n {user-user1} apply -f-
+  | oc -n user-{user-user1} apply -f-
 ----
 
 . Wait for the pod to start:
@@ -146,7 +146,7 @@ helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n {user-user1
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user1} wait pod/gpu-test --for=condition=Ready --timeout=60s
+oc -n user-{user-user1} wait pod/gpu-test --for=condition=Ready --timeout=60s
 ----
 
 . Run nvidia-smi inside the pod:
@@ -154,7 +154,7 @@ oc -n {user-user1} wait pod/gpu-test --for=condition=Ready --timeout=60s
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user1} exec gpu-test -- nvidia-smi
+oc -n user-{user-user1} exec gpu-test -- nvidia-smi
 ----
 +
 You should see simulated NVIDIA GPU information for the active profile -- product name, memory, and utilization -- even though no real GPU exists.
@@ -192,14 +192,14 @@ You should see the GPU resource request and limits - usage - on the node.
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n {user-user1} \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-{user-user1} \
   --set kind=Pod \
   --set name=mig-test \
   --set replicas=1 \
   --set gpuCount=1 \
   --set gpuResourceType=nvidia.com/mig-1g.10gb \
   --set reserved=false \
-  | oc -n {user-user1} apply -f-
+  | oc -n user-{user-user1} apply -f-
 ----
 
 . Wait for the pod to be ready:
@@ -207,7 +207,7 @@ helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n {user-user1
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user1} wait pod/mig-test --for=condition=Ready --timeout=60s
+oc -n user-{user-user1} wait pod/mig-test --for=condition=Ready --timeout=60s
 ----
 +
 . and run nvidia-smi:
@@ -215,7 +215,7 @@ oc -n {user-user1} wait pod/mig-test --for=condition=Ready --timeout=60s
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user1} exec mig-test -- nvidia-smi
+oc -n user-{user-user1} exec mig-test -- nvidia-smi
 ----
 +
 Notice the nvidia-smi output shows the MIG partition size rather than the full GPU memory.
@@ -227,7 +227,7 @@ NOTE: MIG resource types vary by GPU profile. If your cluster is running a non-M
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user1} delete pod gpu-test mig-test
+oc -n user-{user-user1} delete pod gpu-test mig-test
 ----
 
 === Verify
