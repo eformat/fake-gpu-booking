@@ -6,6 +6,11 @@
 
 The https://github.com/rhai-code/gpu-booking-app-plugin[GPU Booking App^] is an OpenShift Console dynamic plugin that provides a calendar interface for reserving GPU resources. It integrates with https://kueue.sigs.k8s.io/docs/overview[Kueue^] to automatically provision per-user ClusterQueues, LocalQueues, and Hardware Profiles based on bookings.
 
+[IMPORTANT]
+====
+The Booking App was designed and built to provide a simple, intuitive interface for users to reserve GPU resources. It is a community project and actively used to manage GPU resources in real GPU enabled clusters. It is not a Red Hat product and is not officially supported by Red Hat.
+====
+
 In this module, you'll use the booking interface to reserve GPU time, observe the Kueue resources it creates, and understand the difference between reserved and consumed bookings.
 
 == Learning objectives
