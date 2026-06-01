@@ -105,14 +105,14 @@ You should see `Login successful` and the list of accessible projects.
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n {user-user-1} \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n {user-user1} \
   --set kind=Deployment \
   --set name=gpu-fake-gpu \
   --set replicas=1 \
   --set gpuCount=8 \
   --set gpuResourceType=nvidia.com/gpu \
   --set reserved=false \
-  | oc -n {user-user-1} apply -f-
+  | oc -n {user-user1} apply -f-
 ----
 +
 Expected output:
@@ -129,7 +129,7 @@ This renders a Helm chart locally and pipes the resulting Deployment manifest in
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user-1} rollout status deployment/gpu-fake-gpu --timeout=120s
+oc -n {user-user1} rollout status deployment/gpu-fake-gpu --timeout=120s
 ----
 +
 Expected output:
@@ -146,7 +146,7 @@ deployment "gpu-fake-gpu" successfully rolled out
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user-1} exec $(oc -n {user-user-1} get pod -l app=gpu-fake-gpu -o name) -- nvidia-smi
+oc -n {user-user1} exec $(oc -n {user-user1} get pod -l app=gpu-fake-gpu -o name) -- nvidia-smi
 ----
 +
 You should see 8 NVIDIA GB200 NVL GPUs listed in the `nvidia-smi` output table. Each row represents one simulated GPU with its memory usage and utilization.
@@ -164,18 +164,18 @@ Expected output (abridged):
 [source,text,subs="attributes"]
 ----
 NAMESPACE    NAME                                        CLUSTERQUEUE   PENDING   ADMITTED
-{user-user-1}   localqueue.kueue.x-k8s.io/unreserved       unreserved     0         1
+{user-user1}   localqueue.kueue.x-k8s.io/unreserved       unreserved     0         1
 
 NAMESPACE   NAME                                             COHORT       PENDING
             clusterqueue.kueue.x-k8s.io/unreserved           unreserved   0
 
 NAMESPACE    NAME                                                        QUEUE        ADMITTED   AGE
-{user-user-1}   workload.kueue.x-k8s.io/pod-gpu-fake-gpu-...              unreserved   True       30s
+{user-user1}   workload.kueue.x-k8s.io/pod-gpu-fake-gpu-...              unreserved   True       30s
 ----
 +
 The key things to observe:
 +
-* **LocalQueue** `unreserved` in `{user-user-1}` has 1 admitted workload -- this is {user-1}'s deployment.
+* **LocalQueue** `unreserved` in `{user-user1}` has 1 admitted workload -- this is {user-1}'s deployment.
 * **ClusterQueue** `unreserved` belongs to the `unreserved` cohort, which shares GPU resources with reserved queues.
 * **Workload** shows `ADMITTED=True` -- Kueue has granted this workload access to GPU resources.
 
@@ -185,7 +185,7 @@ image::qs-user1-workload-running.png[GPU Booking showing 8 GPUs consumed by {use
 
 === Verify
 
-&#10003; Deployment `gpu-fake-gpu` is running in `{user-user-1}` namespace +
+&#10003; Deployment `gpu-fake-gpu` is running in `{user-user1}` namespace +
 &#10003; `nvidia-smi` shows 8 GPUs allocated +
 &#10003; GPU Booking shows 8/8 full GPUs consumed +
 &#10003; RHOAI dashboard is accessible
@@ -261,24 +261,24 @@ Expected output (abridged):
 [source,text,subs="attributes"]
 ----
 NAMESPACE    NAME                                        CLUSTERQUEUE   PENDING   ADMITTED
-{user-user-1}   localqueue.kueue.x-k8s.io/unreserved       unreserved     2         0
-{user-user-2}   localqueue.kueue.x-k8s.io/reserved         {user-user-2}     0         1
+{user-user1}   localqueue.kueue.x-k8s.io/unreserved       unreserved     2         0
+{user-user2}   localqueue.kueue.x-k8s.io/reserved         {user-user2}     0         1
 
 NAMESPACE   NAME                                             COHORT       PENDING
             clusterqueue.kueue.x-k8s.io/unreserved           unreserved   2
-            clusterqueue.kueue.x-k8s.io/{user-user-2}           unreserved   0
+            clusterqueue.kueue.x-k8s.io/{user-user2}           unreserved   0
 
 NAMESPACE    NAME                                                        QUEUE        RESERVED IN   ADMITTED   AGE
-{user-user-1}   workload.kueue.x-k8s.io/pod-gpu-fake-gpu-...-f17e3        unreserved                              16s
-{user-user-1}   workload.kueue.x-k8s.io/pod-gpu-fake-gpu-...-0fae4        unreserved                  False      13m
-{user-user-2}   workload.kueue.x-k8s.io/statefulset-fake-gpu-workbench-.. reserved     {user-user-2}    True       16s
+{user-user1}   workload.kueue.x-k8s.io/pod-gpu-fake-gpu-...-f17e3        unreserved                              16s
+{user-user1}   workload.kueue.x-k8s.io/pod-gpu-fake-gpu-...-0fae4        unreserved                  False      13m
+{user-user2}   workload.kueue.x-k8s.io/statefulset-fake-gpu-workbench-.. reserved     {user-user2}    True       16s
 ----
 +
 This output shows preemption in action:
 +
 * **{user-1}'s workloads** are now `ADMITTED=False` or have no admission status. Kueue evicted them to free the GPU for {user-2}'s reservation. The `unreserved` queue shows 2 pending workloads that are waiting for resources.
-* **{user-2}'s workload** shows `ADMITTED=True` and `RESERVED IN={user-user-2}`. The booking app created a dedicated ClusterQueue (`{user-user-2}`) for the reservation, and the workbench workload was admitted there with priority over the unreserved workloads.
-* The `{user-user-2}` ClusterQueue belongs to the same `unreserved` cohort -- this is how Kueue's `reclaimWithinCohort` policy allows reserved workloads to reclaim resources from unreserved ones.
+* **{user-2}'s workload** shows `ADMITTED=True` and `RESERVED IN={user-user2}`. The booking app created a dedicated ClusterQueue (`{user-user2}`) for the reservation, and the workbench workload was admitted there with priority over the unreserved workloads.
+* The `{user-user2}` ClusterQueue belongs to the same `unreserved` cohort -- this is how Kueue's `reclaimWithinCohort` policy allows reserved workloads to reclaim resources from unreserved ones.
 
 === Verify
 
@@ -309,7 +309,7 @@ oc login {openshift_api_url} -u {user-1} -p {password}
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user-1} get pods
+oc -n {user-user1} get pods
 ----
 +
 Expected output:
@@ -352,7 +352,7 @@ Return to the RHOAI dashboard as {user-2}.
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user-1} get pods
+oc -n {user-user1} get pods
 ----
 +
 Expected output:
@@ -384,17 +384,17 @@ image::qs-cancel-booking.png[GPU Booking My Bookings with Cancel All button,link
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user-2} get cq,lq,hardwareprofile
+oc -n {user-user2} get cq,lq,hardwareprofile
 ----
 +
 Expected output:
 +
 [source,text,subs="attributes"]
 ----
-No "reserved" resources found in {user-user-2} namespace.
+No "reserved" resources found in {user-user2} namespace.
 ----
 +
-When a booking is canceled, the GPU Booking app automatically cleans up all Kueue resources it created: the per-user ClusterQueue (`{user-user-2}`), the `reserved` LocalQueue, and any HardwareProfiles. This ensures no stale reservation state remains on the cluster.
+When a booking is canceled, the GPU Booking app automatically cleans up all Kueue resources it created: the per-user ClusterQueue (`{user-user2}`), the `reserved` LocalQueue, and any HardwareProfiles. This ensures no stale reservation state remains on the cluster.
 
 === Verify
 
@@ -422,7 +422,7 @@ oc login {openshift_api_url} -u {user-1} -p {password}
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user-1} delete deployment gpu-fake-gpu
+oc -n {user-user1} delete deployment gpu-fake-gpu
 ----
 +
 Expected output:
@@ -450,7 +450,7 @@ oc login {openshift_api_url} -u {user-2} -p {password}
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user-2} delete pvc fake-gpu-workbench-storage
+oc -n {user-user2} delete pvc fake-gpu-workbench-storage
 ----
 +
 Expected output:
@@ -462,8 +462,8 @@ persistentvolumeclaim "fake-gpu-workbench-storage" deleted
 
 === Verify
 
-&#10003; No deployments remain in `{user-user-1}` +
-&#10003; No PVCs remain in `{user-user-2}` +
+&#10003; No deployments remain in `{user-user1}` +
+&#10003; No PVCs remain in `{user-user2}` +
 &#10003; GPU resources fully released
 
 == Module summary

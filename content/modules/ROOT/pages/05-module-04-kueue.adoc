@@ -150,14 +150,14 @@ Topology defines zone and hostname levels for pod spreading.
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n {user-user-1} \
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n {user-user1} \
   --set kind=Pod \
   --set name=kueue-test \
   --set replicas=1 \
   --set gpuCount=1 \
   --set gpuResourceType=nvidia.com/gpu \
   --set reserved=false \
-  | oc -n {user-user-1} apply -f-
+  | oc -n {user-user1} apply -f-
 ----
 
 . Watch the workload admission:
@@ -165,7 +165,7 @@ helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n {user-user-
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user-1} get workloads -w
+oc -n {user-user1} get workloads -w
 ----
 +
 Press `Ctrl+C` after the workload is admitted.
@@ -175,7 +175,7 @@ Press `Ctrl+C` after the workload is admitted.
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user-1} get workloads -o custom-columns=\
+oc -n {user-user1} get workloads -o custom-columns=\
 NAME:.metadata.name,\
 QUEUE:.spec.queueName,\
 ADMISSION:.status.admission.clusterQueue
@@ -196,7 +196,7 @@ oc get clusterqueue unreserved -o jsonpath='{.status.flavorsUsage}' | jq .
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n {user-user-1} delete pod kueue-test
+oc -n {user-user1} delete pod kueue-test
 ----
 
 === Verify
