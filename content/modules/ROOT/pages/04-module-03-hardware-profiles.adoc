@@ -121,19 +121,19 @@ You should see five **reserved** profiles -- one for the full GPU and one for ea
 | Hardware Profile | GPU resource
 
 | `reserved-gpu`
-| 1x `nvidia.com/gpu`
+| `nvidia.com/gpu`
 
 | `reserved-mig-80gb`
-| 1x `nvidia.com/mig-7g.80gb`
+| `nvidia.com/mig-7g.80gb`
 
 | `reserved-mig-40gb`
-| 1x `nvidia.com/mig-3g.40gb`
+| `nvidia.com/mig-3g.40gb`
 
 | `reserved-mig-20gb`
-| 1x `nvidia.com/mig-2g.20gb`
+| `nvidia.com/mig-2g.20gb`
 
 | `reserved-mig-10gb`
-| 1x `nvidia.com/mig-1g.10gb`
+| `nvidia.com/mig-1g.10gb`
 |===
 +
 The booking app creates a profile for every MIG slice size defined in the GPU topology, not just the ones you explicitly reserved. This means data scientists see the full range of GPU partition options when creating a workbench.
@@ -148,19 +148,19 @@ oc -n user-{user-user1} get hardwareprofile reserved-gpu -o yaml
 +
 Note that the profile specifies:
 +
-* GPU resource limits matching one full GPU (`nvidia.com/gpu: 1`)
+* GPU resource limits matching `minCount:1`, `maxCount: 8` full GPU (`nvidia.com/gpu` identifier)
 * CPU and memory limits calculated as a share of the total node resources
-* A `spec.localQueue: reserved` annotation that targets your user-specific ClusterQueue
+* A `spec.scheduling.kueue.localQueueName: reserved` annotation that targets your user-specific LocalQueue
 
 . Compare with the MIG profile:
 +
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n user-{user-1} get hardwareprofile reserved-mig-10gb -o yaml
+oc -n user-{user1} get hardwareprofile reserved-mig-10gb -o yaml
 ----
 +
-The MIG profile requests a smaller GPU partition (`nvidia.com/mig-1g.10gb: 1`) with proportionally less CPU and memory. A data scientist choosing this profile gets a MIG slice instead of a full GPU -- useful for inference or lightweight training tasks that don't need an entire GPU.
+The MIG profile requests a smaller GPU partition (`nvidia.com/mig-1g.10gb: 1`). A data scientist choosing this profile gets a MIG slice instead of a full GPU -- useful for inference or lightweight training tasks that don't need an entire GPU.
 
 . Verify all reserved profiles point to the same reserved LocalQueue:
 +
@@ -169,7 +169,7 @@ The MIG profile requests a smaller GPU partition (`nvidia.com/mig-1g.10gb: 1`) w
 ----
 oc -n user-{user-user1} get hardwareprofiles -o custom-columns=\
 NAME:.metadata.name,\
-QUEUE:.metadata.annotations.opendatahub\.io/dashboard-local-queue
+QUEUE:.spec.scheduling.kueue.localQueueName
 ----
 +
 All reserved profiles should show `reserved` as their queue. This is what ties the Hardware Profile selection in the RHOAI dashboard back to your protected Kueue quota.
