@@ -12,7 +12,7 @@ In this module, you'll explore the Kueue resource hierarchy, understand how Coho
 
 By the end of this module, you'll be able to:
 
-* Describe the Kueue resource hierarchy: ResourceFlavor, ClusterQueue, LocalQueue, Cohort
+* Describe the Kueue resource hierarchy: https://kueue.sigs.k8s.io/docs/concepts/resource_flavor[ResourceFlavor^], https://kueue.sigs.k8s.io/docs/concepts/cluster_queue[ClusterQueue^], https://kueue.sigs.k8s.io/docs/concepts/local_queue[LocalQueue^], https://kueue.sigs.k8s.io/docs/concepts/cohort[Cohort^]
 * Explain how the unreserved Cohort enables borrowing and reclaiming
 * Submit a workload and trace its admission through Kueue
 * Identify when and why workloads are queued vs. admitted
@@ -33,25 +33,43 @@ Cohort: unreserved
 
 All ClusterQueues share resources through the **unreserved** Cohort. The key difference is in their preemption policies:
 
-[cols="1,1,1,1",options="header"]
+[cols="1,1,1,2",options="header"]
 |===
 | ClusterQueue | nominalQuota | Borrow? | Preempt?
 
 | `unreserved`
 | Total minus reserved
 | Yes (from cohort)
-| No
+| No -- workloads here are always preemptable
 
 | `unreserved-priority`
 | 0
 | Yes (from cohort)
-| Low-priority borrowing only
+| Yes -- can preempt lower-priority borrowing workloads (see below)
 
 | `user-<name>`
 | User's reservation
 | No
-| Yes (reclaim within cohort)
+| Yes -- `reclaimWithinCohort: Any` reclaims its protected quota
 |===
+
+=== What is low-priority borrowing?
+
+The `unreserved-priority` ClusterQueue exists for workloads that need to preempt other unreserved work -- without having a reservation. It has `nominalQuota: 0` (no guaranteed resources), so all its resources are borrowed from the Cohort. The difference from the regular `unreserved` queue is its preemption policy:
+
+[source,yaml]
+----
+preemption:
+  borrowWithinCohort:
+    policy: LowerPriority
+    maxPriorityThreshold: 100
+----
+
+This means: "when I am borrowing from the Cohort, I can preempt other borrowing workloads -- but only those with a priority value of 100 or below." A workload using the `high-priority` WorkloadPriorityClass (value `10000`) submitted to `unreserved-priority` can preempt regular unreserved workloads (which have no priority class, defaulting to 0). But it still **cannot** preempt workloads running under a user reservation -- those are protected by `nominalQuota`, not borrowing.
+
+This is useful for batch scheduling scenarios where certain unreserved jobs (e.g., urgent training runs) should jump ahead of background workloads without needing a full reservation.
+
+=== What is protected quota?
 
 When you make a reservation, the app creates Kueue resources that give your workloads **protected quota** -- they cannot be preempted by unreserved workloads.
 
