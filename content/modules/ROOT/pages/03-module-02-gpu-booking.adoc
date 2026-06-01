@@ -174,9 +174,9 @@ There are two types of bookings in the system:
 * Are auto-generated with deterministic IDs so the sync can reconcile additions/removals
 * Can be overridden by a new reservation (consumed workloads get preempted)
 
-Let's create a workload that consumes the GPUs we reserved and some extras to see the difference between reserved and consumed bookings.
+Let's see this in practice. You reserved 4 GPUs in Exercise 2, but now you'll deploy a workload requesting **6** -- more than your reservation. This is allowed, and understanding _why_ is key to understanding the Kueue Cohort model.
 
-. Deploy a simple pod requesting **6** full GPU:
+. Deploy a pod requesting **6** full GPUs to the reserved queue:
 +
 [.copypaste]
 [source,bash,subs="attributes"]
@@ -193,7 +193,58 @@ helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-{user-
 +
 image::consumed-6-gpu.png[6 GPUs Consumed,link=self,window=blank,width=700]
 +
-You should see 4 red colored slots for the 4 GPUs you reserved and 2 green colored slots for the extra GPUs you consumed totalling 6 GPUs. The Booking App refreshes screen every 10 seconds, else use the refresh button in the top right of the screen.
+You should see 4 **red** slots for the reserved GPUs and 2 **green** slots for the extra consumed GPUs, totalling 6. The Booking App refreshes the screen every 10 seconds, or use the refresh button in the top right.
+
+=== Why 6 GPUs when only 4 are reserved?
+
+Your ClusterQueue `user-{user-user1}` has `nominalQuota: 4` -- that's your guaranteed, protected allocation. But it also belongs to the `unreserved` Cohort, and Kueue allows ClusterQueues to **borrow** idle resources from their Cohort beyond their nominalQuota.
+
+Inspect the ClusterQueue status to see this in action:
+
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc get cq user-{user-user1} -o jsonpath='{range .status.flavorsUsage[0].resources[*]}{.name}{"\t"}total={.total}{"\t"}borrowed={.borrowed}{"\n"}{end}'
+----
+
+You should see output like:
+
+[source,text]
+----
+cpu          total=0    borrowed=0
+memory       total=0    borrowed=0
+nvidia.com/gpu   total=6    borrowed=2
+----
+
+Kueue reports `total=6` and `borrowed=2` for `nvidia.com/gpu`. The breakdown:
+
+* **4 GPUs** come from your `nominalQuota` -- these are your reserved allocation
+* **2 GPUs** are **borrowed** from the Cohort's idle capacity
+
+The Cohort `unreserved` owns the remaining 4 GPUs (8 total minus your 4 reserved). Since no unreserved workloads are running, those 4 GPUs are idle -- and your ClusterQueue borrows 2 of them.
+
+=== What protects what?
+
+The preemption policy on your ClusterQueue controls the difference between reserved and borrowed GPUs:
+
+[cols="1,1,2",options="header"]
+|===
+| GPU type | Calendar color | Preemption behavior
+
+| **Reserved** (nominalQuota)
+| Red
+| Fully protected. Your CQ has `reclaimWithinCohort: Any` -- it can preempt any unreserved workload to reclaim these GPUs if needed.
+
+| **Borrowed** (from Cohort)
+| Green
+| Best-effort. Your CQ has `borrowWithinCohort.policy: Never` -- it cannot preempt anyone to get borrowed GPUs. They must be genuinely idle. If another user reserves those GPUs, your borrowed allocation is preempted first.
+|===
+
+This is why the booking app shows two colors: **red** means guaranteed capacity backed by `nominalQuota`, and **green** means your workload is consuming more than its reservation by borrowing idle Cohort resources.
+
+TIP: Borrowed GPUs let you burst beyond your reservation when the cluster has spare capacity, but they come with no guarantee. If you need all 6 GPUs to be protected, increase your reservation to 6 in the booking calendar.
+
+=== Correlate with Kueue state
 
 . Check for consumed bookings by listing active workloads:
 +
@@ -214,7 +265,7 @@ PENDING:.status.pendingWorkloads
 ----
 oc get clusterqueues -o custom-columns=\
 NAME:.metadata.name,\
-COHORT:.spec.cohort,\
+COHORT:.spec.cohortName,\
 ADMITTED:.status.admittedWorkloads,\
 PENDING:.status.pendingWorkloads
 ----
@@ -222,7 +273,9 @@ PENDING:.status.pendingWorkloads
 === Verify
 
 &#10003; Understand the difference between reserved and consumed bookings +
-&#10003; Can correlate calendar entries with Kueue resource state
+&#10003; Can explain why a 6-GPU workload is admitted with a 4-GPU reservation +
+&#10003; Can identify borrowed vs. nominalQuota usage in ClusterQueue status +
+&#10003; Can correlate calendar colors (red/green) with Kueue resource state
 
 == Exercise 4: Check Hardware Profiles
 
