@@ -280,6 +280,18 @@ PENDING:.status.pendingWorkloads
 oc -n user-{user-user1} delete pod gpu-test
 ----
 
+. {user-1}: Cancel booking
++
+[IMPORTANT]
+====
+**Acting as: `{user-1}`** +
+Return to the OpenShift Console as {user-1}.
+====
++
+. Navigate to **GPU Booking** > **Bookings** and click **My Bookings**.
++
+. Click **Cancel All** to remove the GPU reservation, then click **Confirm**.
+
 === Verify
 
 &#10003; Understand the difference between reserved and consumed bookings +
