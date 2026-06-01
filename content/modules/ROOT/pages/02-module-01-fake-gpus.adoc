@@ -67,7 +67,7 @@ You should see the active GPU profile name and 8 full GPUs. MIG resources depend
 [.copypaste]
 [source,bash]
 ----
-oc get pods -n fake-gpu-operator
+oc get pods -n gpu-operator
 ----
 
 === Verify
