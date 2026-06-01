@@ -172,9 +172,9 @@ There are two types of bookings in the system:
 * Are auto-generated with deterministic IDs so the sync can reconcile additions/removals
 * Can be overridden by a new reservation (consumed workloads get preempted)
 
-Let's create some workloads to consume some of the GPUs we reserved.
+Let's create some workloads to consume the GPUs we reserved and some extras to see the difference between reserved and consumed bookings.
 
-. Deploy a simple pod requesting **2** full GPU:
+. Deploy a simple pod requesting **6** full GPU:
 +
 [.copypaste]
 [source,bash,subs="attributes"]
@@ -183,7 +183,7 @@ helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-{user-
   --set kind=Pod \
   --set name=gpu-test \
   --set replicas=1 \
-  --set gpuCount=2 \
+  --set gpuCount=6 \
   --set gpuResourceType=nvidia.com/gpu \
   --set reserved=true \
   | oc -n user-{user-user1} apply -f-
