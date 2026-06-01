@@ -97,15 +97,20 @@ image::booking-app-help.png[Booking App Help Documentation,link=self,window=blan
 
 == Exercise 2: Create a GPU reservation
 
+[IMPORTANT]
+====
+**Acting as: `{user-user1}`**
+====
+
 . In the booking calendar, select today's date by clicking on it.
 
 . Choose a GPU resource type (e.g., **GB200 NVL Full GPU**).
 
-. Set the number of GPUs you want to reserve (start with 1).
+. Set the number of GPUs you want to reserve (lets start with **4**).
 
 . Click **Reserve** to create the booking.
 +
-The booking should appear as a colored slot in the calendar.
+The booking should appear as a colored slot in the calendar. You should see 4 red colored slots in the calendar for the 4 GPUs you reserved.
 
 . Verify the Kueue resources were created:
 +
@@ -115,17 +120,17 @@ The booking should appear as a colored slot in the calendar.
 oc get clusterqueues
 ----
 +
-You should see a new ClusterQueue named after your user (e.g., `{user-user1}`).
+You should see a new ClusterQueue named after your user (e.g., `user-{user-user1}`).
 
 . Inspect your user's ClusterQueue:
 +
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc get clusterqueue {user-user1} -o yaml | grep -A 20 "resourceGroups"
+oc -n user-{user-user1} get clusterqueue user-{user-user1} -o yaml | grep -A 20 "resourceGroups"
 ----
 +
-The `nominalQuota` shows the GPU resources you reserved -- this is your protected allocation.
+The `nominalQuota` shows the GPU resources you reserved. You should see `nominalQuota: "4"` -- this is your protected allocation. The cpu and memo are calculated by the booking app based on the GPU resource type you reserved and are a percentage of the total resources available.
 
 . Check that a LocalQueue was created in your namespace:
 +
@@ -135,7 +140,7 @@ The `nominalQuota` shows the GPU resources you reserved -- this is your protecte
 oc -n user-{user-user1} get localqueues
 ----
 +
-You should see a new LocalQueue pointing to your user's ClusterQueue.
+You should see a new LocalQueue called `reserved` pointing to your user's ClusterQueue.
 
 You can also bulk book reservations of multiple GPUs and MIG partitions by right clicking on the calendar.
 
@@ -148,6 +153,7 @@ Select the number of GPUs and MIG partitions you want to reserve, add a descript
 &#10003; Reservation appears in the booking calendar +
 &#10003; User-specific ClusterQueue exists with `nominalQuota` matching your reservation +
 &#10003; LocalQueue created in your namespace
+&#10003; Bulk booking reservations can be created by right clicking on the calendar
 
 == Exercise 3: Understand reserved vs. consumed bookings
 
@@ -165,6 +171,21 @@ There are two types of bookings in the system:
 * Appear as a different color in the calendar
 * Are auto-generated with deterministic IDs so the sync can reconcile additions/removals
 * Can be overridden by a new reservation (consumed workloads get preempted)
+
+. Deploy a simple pod requesting **2** full GPU:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-{user-user1} \
+  --set kind=Pod \
+  --set name=gpu-test \
+  --set replicas=1 \
+  --set gpuCount=2 \
+  --set gpuResourceType=nvidia.com/gpu \
+  --set reserved=false \
+  | oc -n user-{user-user1} apply -f-
+----
 
 . Check for consumed bookings by listing active workloads:
 +
