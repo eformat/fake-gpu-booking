@@ -270,6 +270,16 @@ ADMITTED:.status.admittedWorkloads,\
 PENDING:.status.pendingWorkloads
 ----
 
+=== Clean up
+
+. Delete the workload:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc -n user-{user-user1} delete pod gpu-test
+----
+
 === Verify
 
 &#10003; Understand the difference between reserved and consumed bookings +
