@@ -78,10 +78,10 @@ We have configured reservation guarantees to ensure that user reservations are n
 The Booking App's design is achieved through the use of Kueue's Cohort model:
 
 - the https://kueue.sigs.k8s.io/docs/concepts/cohort[Cohort^] (which is named `unreserved`) initially owns all the resources in the cluster
-- all unreserved workloads are borrowing (their ClusterQueue has `nominalQuota: 0`).
+- all unreserved workloads are borrowing (their https://kueue.sigs.k8s.io/docs/concepts/cluster_queue[ClusterQueue^] has `nominalQuota: 0`).
 - when a user makes a reservation, the Cohort is reduced by the amount of the reservation
-- a user ClusterQueue `user-<name> is created for the user with the `nominalQuota` matching the reservation
-- their `user-<name>` ClusterQueue has `reclaimWithinCohort: Any` and `borrowWithinCohort: Never` which means it can preempt any workload borrowing from the cohort but never borrow itself
+- a user https://kueue.sigs.k8s.io/docs/concepts/cluster_queue[ClusterQueue^] `user-<name>` is created for the user with the `nominalQuota` matching the reservation
+- their `user-<name>` https://kueue.sigs.k8s.io/docs/concepts/cluster_queue[ClusterQueue^] has `reclaimWithinCohort: Any` and `borrowWithinCohort: Never` which means it can preempt any workload borrowing from the cohort but never borrow itself
 
 https://kueue.sigs.k8s.io/docs/concepts/preemption[Preemption^] works because the booking app actively shrinks the Cohort's capacity when quota is allocated. The unreserved CQ has 0 nominal and borrows from the Cohort. When the Cohort shrinks, the unreserved workloads are over their allocation, and the user CQ reclaims.
 
