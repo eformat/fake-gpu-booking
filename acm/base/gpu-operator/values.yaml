@@ -16,13 +16,16 @@ topology:
   nodePoolLabelKey: run.ai/simulated-gpu-node-pool
   migStrategy: none
 
+kwokGpuDevicePlugin:
+  enabled: false
+
 devicePlugin:
   image:
     repository: quay.io/eformat/fake-gpu-operator-device-plugin
     tag: latest
 
 migFaker:
-  enabled: false
+  enabled: true
   image:
     repository: quay.io/eformat/fake-gpu-operator-mig-faker
     tag: latest
@@ -30,4 +33,15 @@ migFaker:
 statusUpdater:
   image:
     repository: quay.io/eformat/fake-gpu-operator-status-updater
+    tag: latest
+
+statusExporter:
+  enabled: true
+  image:
+    repository: quay.io/eformat/fake-gpu-operator-status-exporter
+    tag: latest
+
+topologyServer:
+  image:
+    repository: quay.io/eformat/fake-gpu-operator-topology-server
     tag: latest
