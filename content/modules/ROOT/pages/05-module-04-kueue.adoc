@@ -328,22 +328,32 @@ oc get cohort unreserved -o jsonpath='{range .spec.resourceGroups[0].flavors[0].
 oc get cq unreserved -o jsonpath='{range .spec.resourceGroups[0].flavors[0].resources[*]}{.name}: {.nominalQuota}{"\n"}{end}'
 ----
 +
-The `unreserved` CQ has `nominalQuota: 0` for every resource. It owns nothing -- all its capacity comes from borrowing from the Cohort. This is deliberate:
+The `unreserved` CQ has `nominalQuota: 0` for every resource. It owns nothing -- all its capacity comes from borrowing from the Cohort. Now compare with the user CQ:
 +
-[cols="1,1,2",options="header"]
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc get cq user-{user-user1} -o jsonpath='{range .spec.resourceGroups[0].flavors[0].resources[*]}{.name}: {.nominalQuota}{"\n"}{end}'
+----
++
+With 1 GPU reserved, the three sources of quota look like this:
++
+[cols="1,1,1,1",options="header"]
 |===
-| Resource | Cohort nominalQuota | CQ unreserved nominalQuota
+| Resource | Cohort | CQ `unreserved` | CQ `user-{user-user1}`
 
 | `nvidia.com/gpu`
-| 8 (minus reservations)
+| 7
 | 0
+| 1
 
 | `nvidia.com/mig-1g.10gb`
 | 56
 | 0
+| 0
 |===
 +
-If the CQ had a non-zero nominalQuota, that would be **added** to the Cohort's capacity -- accidentally inflating the total beyond what the cluster actually has. The booking app avoids this by keeping all unreserved CQs at zero and putting the real capacity exclusively in the Cohort.
+The cluster has 8 physical GPUs. The Cohort holds 7, the user CQ holds 1 -- total is 8. Because Cohort and CQ quotas are **additive**, the booking app must reduce the Cohort by exactly the reserved amount. If the CQ `unreserved` also had a non-zero nominalQuota, that would be added on top -- accidentally inflating the total beyond what the cluster actually has. The booking app avoids this by keeping all unreserved CQs at zero and putting the real capacity exclusively in the Cohort.
 
 === Why this matters for preemption
 
