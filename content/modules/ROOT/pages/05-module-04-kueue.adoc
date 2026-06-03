@@ -168,6 +168,8 @@ The `user-{user-user1}` CQ has `reclaimWithinCohort: Any` -- it can preempt unre
 
 == Exercise 2: Explore ResourceFlavors and Topology
 
+A https://kueue.sigs.k8s.io/docs/concepts/resource_flavor[ResourceFlavor^] tells Kueue which nodes can satisfy a particular type of resource. Each ClusterQueue references one or more flavors in its `resourceGroups` -- this is how Kueue matches GPU workloads to the right nodes.
+
 . List ResourceFlavors:
 +
 [.copypaste]
@@ -175,18 +177,43 @@ The `user-{user-user1}` CQ has `reclaimWithinCohort: Any` -- it can preempt unre
 ----
 oc get resourceflavors
 ----
++
+You should see three flavors:
++
+[cols="1,3",options="header"]
+|===
+| ResourceFlavor | Purpose
 
-. Inspect the H200 ResourceFlavor:
+| `gpu-pool`
+| The fake GPU nodes -- used by all GPU ClusterQueues in this workshop
+
+| `default-flavor`
+| Created by the RHOAI operator (not used in this workshop)
+
+| `nvidia-gpu-flavor`
+| Created by the RHOAI operator (not used in this workshop)
+|===
+
+. Inspect the `gpu-pool` ResourceFlavor:
 +
 [.copypaste]
 [source,bash]
 ----
-oc get resourceflavors -o yaml | grep -A 20 "spec:"
+oc get resourceflavor gpu-pool -o yaml
 ----
 +
-ResourceFlavors define node affinity and tolerations that match workloads to the right nodes -- in this case, nodes with simulated H200 GPUs.
+The key field is `spec.nodeLabels`:
++
+[source,yaml]
+----
+spec:
+  nodeLabels:
+    run.ai/simulated-gpu-node-pool: default
+----
++
+This label selector is how Kueue knows which nodes have fake GPUs. When the GPU Config plugin labels worker nodes with `run.ai/simulated-gpu-node-pool=default`, those nodes become part of the `gpu-pool` flavor. Every ClusterQueue in the `unreserved` Cohort references this flavor in its `resourceGroups`, so all GPU workloads -- whether reserved or unreserved -- are scheduled onto these labeled nodes.
 
-. Check the Topology configuration:
+. Check the https://kueue.sigs.k8s.io/docs/concepts/topology[Topology^] configuration:
 +
 [.copypaste]
 [source,bash]
@@ -194,11 +221,14 @@ ResourceFlavors define node affinity and tolerations that match workloads to the
 oc get topologies -A
 ----
 +
-Topology defines zone and hostname levels for pod spreading.
+https://kueue.sigs.k8s.io/docs/concepts/topology[Topology^] defines zone and hostname levels for pod spreading across nodes. We are using the default topology configuration which means that pods will be spread across nodes in the same zone and hostname.
++
+You can use Topology to enable https://kueue.sigs.k8s.io/docs/concepts/topology_aware_scheduling[Topology Aware Scheduling^] by providing a model that represents the hierarchy of your organizational units (such as zones, blocks, and racks) along with node labels.
 
 === Verify
 
-&#10003; ResourceFlavor exists for GPU nodes +
+&#10003; `gpu-pool` ResourceFlavor targets nodes with `run.ai/simulated-gpu-node-pool: default` +
+&#10003; All GPU ClusterQueues reference the `gpu-pool` flavor +
 &#10003; Topology configuration defines scheduling levels
 
 == Exercise 3: Trace a workload through admission
@@ -226,7 +256,7 @@ helm template gpu-deploy oci://quay.io/eformat/gpu-test-workloads -n user-{user-
 oc -n user-{user-user1} get workloads -w
 ----
 +
-Press `Ctrl+C` after the workload is admitted.
+Press `Ctrl+C` after the workload is admitted - you should see `ADMITTED: True` in the output.
 
 . Check which ClusterQueue admitted the workload:
 +
@@ -248,6 +278,17 @@ Unreserved workloads are admitted by the `unreserved` ClusterQueue.
 ----
 oc get clusterqueue unreserved -o jsonpath='{.status.flavorsUsage}' | jq .
 ----
++
+You should see the workload with `total=1` and `borrowed=1` in the `flavorsUsage` array for the `nvidia.com/gpu` resource type.
++
+[source,json]
+----
+{
+  "borrowed": "1",
+  "name": "nvidia.com/gpu",
+  "total": "1"
+}
+----
 
 . Clean up:
 +
@@ -265,24 +306,81 @@ oc -n user-{user-user1} delete pod kueue-test
 
 == Exercise 4: Understand the Cohort model
 
-The Cohort is the key to resource sharing. All ClusterQueues in the same Cohort share a single pool of resources:
+The https://kueue.sigs.k8s.io/docs/concepts/cohort[Cohort^] is the key to resource sharing. All https://kueue.sigs.k8s.io/docs/concepts/cluster_queue[ClusterQueues^] in the same Cohort share a single pool of resources.
 
-. View the Cohort resource totals:
+=== Cohort resources are ADDITIVE to CQ resources
+
+A critical detail of Kueue's design: the total capacity available to a ClusterQueue is its own `nominalQuota` **plus** what it can borrow from the Cohort. They are additive, not overlapping. This has important implications for how you configure the system.
+
+. Inspect the Cohort's resource totals:
 +
 [.copypaste]
 [source,bash]
 ----
-oc get clusterqueues -o custom-columns=\
-NAME:.metadata.name,\
-COHORT:.spec.cohortName \
-| grep unreserved
+oc get cohort unreserved -o jsonpath='{range .spec.resourceGroups[0].flavors[0].resources[*]}{.name}: {.nominalQuota}{"\n"}{end}'
 ----
 
-. The total resources available in the Cohort equal:
+. Compare with the `unreserved` ClusterQueue's nominalQuota:
 +
-`Total GPU capacity - Sum of all user reservations = Unreserved Cohort quota`
+[.copypaste]
+[source,bash]
+----
+oc get cq unreserved -o jsonpath='{range .spec.resourceGroups[0].flavors[0].resources[*]}{.name}: {.nominalQuota}{"\n"}{end}'
+----
 +
-When a user makes a reservation, the booking app reduces the `unreserved` ClusterQueue's nominalQuota by the reserved amount.
+The `unreserved` CQ has `nominalQuota: 0` for every resource. It owns nothing -- all its capacity comes from borrowing from the Cohort. This is deliberate:
++
+[cols="1,1,2",options="header"]
+|===
+| Resource | Cohort nominalQuota | CQ unreserved nominalQuota
+
+| `nvidia.com/gpu`
+| 8 (minus reservations)
+| 0
+
+| `nvidia.com/mig-1g.10gb`
+| 56
+| 0
+|===
++
+If the CQ had a non-zero nominalQuota, that would be **added** to the Cohort's capacity -- accidentally inflating the total beyond what the cluster actually has. The booking app avoids this by keeping all unreserved CQs at zero and putting the real capacity exclusively in the Cohort.
+
+=== Why this matters for preemption
+
+The additive model determines which preemption policies work:
+
+* **`reclaimWithinCohort: Any`** -- only useful when a CQ has `nominalQuota > 0`. It reclaims resources that belong to the CQ but are being borrowed by others. With `nominalQuota: 0`, there is nothing to reclaim.
+
+* **`borrowWithinCohort: LowerPriority`** -- useful when a CQ has `nominalQuota: 0` and needs to preempt other borrowers. Since everything is borrowed, preemption happens between borrowers based on priority.
+
+This is why the booking app uses different preemption policies for different queue types:
+
+[cols="1,1,1",options="header"]
+|===
+| ClusterQueue | nominalQuota | Preemption strategy
+
+| `unreserved`
+| 0
+| None -- cannot preempt (nothing to reclaim, no priority preemption)
+
+| `unreserved-priority`
+| 0
+| `borrowWithinCohort: LowerPriority` -- preempts lower-priority borrowers
+
+| `user-<name>`
+| User's reservation
+| `reclaimWithinCohort: Any` -- reclaims its own protected quota from borrowers
+|===
+
+. Verify the Cohort shrinks when a reservation exists:
++
+[.copypaste]
+[source,bash]
+----
+oc get cohort unreserved -o jsonpath='{range .spec.resourceGroups[0].flavors[0].resources[*]}{.name}: {.nominalQuota}{"\n"}{end}' | grep gpu
+----
++
+If you created a reservation in Exercise 1, the Cohort's `nvidia.com/gpu` will show less than 8 -- the booking app reduced it by the reserved amount to prevent double-counting.
 
 . Check the WorkloadPriorityClasses:
 +
@@ -296,8 +394,10 @@ Higher priority workloads are admitted first and can preempt lower priority ones
 
 === Verify
 
-&#10003; Understand that Cohort enables resource sharing across ClusterQueues +
-&#10003; Reservation reduces unreserved quota dynamically +
+&#10003; Understand that Cohort and CQ nominalQuotas are additive +
+&#10003; Unreserved CQs have `nominalQuota: 0` -- all capacity is in the Cohort +
+&#10003; Reservation reduces Cohort quota to prevent capacity inflation +
+&#10003; Preemption strategy depends on whether the CQ has nominalQuota or not +
 &#10003; WorkloadPriorityClasses control admission order
 
 == Module summary
