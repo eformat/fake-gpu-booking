@@ -1,6 +1,7 @@
 ---
 resources:
   - ../../base
+  - ../dashboard
 
 patches:
   - target:
