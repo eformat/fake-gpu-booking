@@ -25,7 +25,7 @@ devicePlugin:
     tag: latest
 
 migFaker:
-  enabled: true
+  enabled: false # we only need this when using run.ai scheduler
   image:
     repository: quay.io/eformat/fake-gpu-operator-mig-faker
     tag: latest
