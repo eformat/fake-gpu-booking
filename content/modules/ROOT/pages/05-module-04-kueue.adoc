@@ -328,7 +328,7 @@ oc get cohort unreserved -o jsonpath='{range .spec.resourceGroups[0].flavors[0].
 oc get cq unreserved -o jsonpath='{range .spec.resourceGroups[0].flavors[0].resources[*]}{.name}: {.nominalQuota}{"\n"}{end}'
 ----
 +
-The `unreserved` CQ has `nominalQuota: 0` for every resource. It owns nothing -- all its capacity comes from borrowing from the Cohort. Now compare with the user CQ:
+The `unreserved` CQ has `nominalQuota: 0` for every resource. It owns nothing -- all its capacity comes from borrowing from the Cohort. Now compare with the user CQ `user-{user-user1}` which is `reserved`:
 +
 [.copypaste]
 [source,bash,subs="attributes"]
