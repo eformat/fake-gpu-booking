@@ -83,7 +83,7 @@ The Booking App's design is achieved through the use of Kueue's Cohort model:
 - a user https://kueue.sigs.k8s.io/docs/concepts/cluster_queue[ClusterQueue^] `user-<name>` is created for the user with the `nominalQuota` matching the reservation
 - their `user-<name>` https://kueue.sigs.k8s.io/docs/concepts/cluster_queue[ClusterQueue^] has `reclaimWithinCohort: Any` and `borrowWithinCohort: Never` which means it can preempt any workload borrowing from the cohort but never borrow itself
 
-https://kueue.sigs.k8s.io/docs/concepts/preemption[Preemption^] works because the booking app actively shrinks the Cohort's capacity when quota is allocated. The unreserved CQ has 0 nominal and borrows from the Cohort. When the Cohort shrinks, the unreserved workloads are over their allocation, and the user CQ reclaims.
+https://kueue.sigs.k8s.io/docs/concepts/preemption[Preemption^] works because the booking app actively shrinks the Cohort's capacity when quota is allocated. The unreserved CQ has 0 nominal quota (no guaranteed resources) and borrows from the Cohort. When the Cohort shrinks, the unreserved workloads are over their allocation, and the user CQ reclaims.
 
 With this design, we can complement the Kueue Cohort model with other CQ's. One example (not covered in this workshop), is a https://kueue.sigs.k8s.io/docs/concepts/multikueue[Multi-Kueue^] environment. We have a CQ `cluster-queue` where batch workloads are assigned by a HUB Cluster (ACM) to SPOKE GPU enabled clusters. Unreserved workloads can then use the setting `borrowWithinCohort: LowerPriority` to preempt lower priority unreserved workloads - whilst preserving the reservation guarantees for users.
 
@@ -108,10 +108,12 @@ oc login {openshift_api_url} -u {user-user1} -p {password}
 ----
 oc get clusterqueues -o custom-columns=\
 NAME:.metadata.name,\
-COHORT:.spec.cohort,\
+COHORT:.spec.cohortName,\
 ADMITTED:.status.admittedWorkloads,\
 PENDING:.status.pendingWorkloads
 ----
++
+You should see only `default`, `unreserved`, and `unreserved-priority` ClusterQueues.
 
 . Inspect the `unreserved` ClusterQueue:
 +
@@ -121,21 +123,43 @@ PENDING:.status.pendingWorkloads
 oc get clusterqueue unreserved -o yaml
 ----
 +
-Key fields to note:
+Key fields to note in the YAML output:
 +
-* `spec.cohort: unreserved` -- joins the shared Cohort
+* `spec.cohortName: unreserved` -- joins the shared Cohort
 * `spec.resourceGroups` -- defines flavors and nominal quotas
 * `spec.preemption` -- no reclaim rights
 
-. Compare with a user ClusterQueue (if one exists from Module 2):
+. Now create a reservation so we can compare a user ClusterQueue with the unreserved one. In the OpenShift Console, navigate to **GPU Booking** > **Bookings**, select **today's date**, and reserve **1 Full GPU**.
++
+Wait for the Reservation Sync to create the user ClusterQueue .
+
+. Verify the user ClusterQueue was created:
 +
 [.copypaste]
-[source,bash]
+[source,bash,subs="attributes"]
 ----
-oc get clusterqueues -o yaml | grep -B 2 -A 5 "reclaimWithinCohort"
+oc get clusterqueues
 ----
 +
-User ClusterQueues have `reclaimWithinCohort: Any` -- they can preempt unreserved workloads to reclaim their protected quota.
+You should now see a `user-{user-user1}` ClusterQueue alongside `default`, `unreserved` and `unreserved-priority`.
+
+. Compare the preemption policies:
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc get cq unreserved -o jsonpath='{.spec.preemption}' | jq .
+----
++
+The `unreserved` CQ has `reclaimWithinCohort: Never` -- it cannot preempt anyone.
++
+[.copypaste]
+[source,bash,subs="attributes"]
+----
+oc get cq user-{user-user1} -o jsonpath='{.spec.preemption}' | jq .
+----
++
+The `user-{user-user1}` CQ has `reclaimWithinCohort: Any` -- it can preempt unreserved workloads to reclaim its protected quota. This is the key difference that makes reservations work.
 
 === Verify
 
@@ -250,7 +274,7 @@ The Cohort is the key to resource sharing. All ClusterQueues in the same Cohort 
 ----
 oc get clusterqueues -o custom-columns=\
 NAME:.metadata.name,\
-COHORT:.spec.cohort \
+COHORT:.spec.cohortName \
 | grep unreserved
 ----
 
