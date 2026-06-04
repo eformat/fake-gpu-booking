@@ -97,8 +97,10 @@ Or click **Red Hat OpenShift AI** in the right panel tabs.
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc project {user-user1}
+oc get project {user-user1} {user-user2}
 ----
++
+You should see the user namespaces `{user-user1}` and `{user-user2}`.
 
 . Check LocalQueues in the user namespace:
 +
