@@ -157,7 +157,7 @@ Note that the profile specifies:
 [.copypaste]
 [source,bash,subs="attributes"]
 ----
-oc -n user-{user1} get hardwareprofile reserved-mig-10gb -o yaml
+oc -n user-{user-user1} get hardwareprofile reserved-mig-10gb -o yaml
 ----
 +
 The MIG profile requests a smaller GPU partition (`nvidia.com/mig-1g.10gb: 1`). A data scientist choosing this profile gets a MIG slice instead of a full GPU -- useful for inference or lightweight training tasks that don't need an entire GPU.
@@ -195,7 +195,8 @@ All reserved profiles should show `reserved` as their queue. This is what ties t
 ----
 oc get hardwareprofiles -A
 ----
-+ You should see multiple Hardware Profiles in the `redhat-ods-applications` namespace as well as the `user-{user-user1}` namespace.
++
+You should see multiple Hardware Profiles in the `redhat-ods-applications` namespace as well as the `user-{user-user1}` namespace.
 
 . Inspect the unreserved GPU profile:
 +
@@ -214,7 +215,8 @@ Note the `spec.resources` section showing CPU, memory, and GPU limits.
 ----
 oc -n redhat-ods-applications get hardwareprofile cpu-only -o yaml
 ----
-+ The `cpu-only` profile has no GPU resources. It is used for CPU-only workbenches.
++
+The `cpu-only` profile has no GPU resources. It is used for CPU-only workbenches.
 
 === Verify
 

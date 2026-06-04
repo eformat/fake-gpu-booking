@@ -83,7 +83,7 @@ oc get node -l nvidia.com/gpu.present=true \
   -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.metadata.labels.nvidia\.com/gpu\.product}{"\t"}gpu={.status.capacity.nvidia\.com/gpu}{"\n"}{end}'
 ----
 +
-You should see the active GPU profile name and 8 full GPUs. MIG resources depend on the selected profile.
+You should see the active GPU profile name and 8 full GPUs per node. MIG resources depend on the selected profile.
 
 . Inspect the fake-gpu-operator pods:
 +
@@ -92,17 +92,18 @@ You should see the active GPU profile name and 8 full GPUs. MIG resources depend
 ----
 oc get pods -n gpu-operator
 ----
-+ You should see a number of pods including `device-plugin-<hash>`, `topology-server-<hash>`, and `gpu-node-labeler-<hash>`.
++
+You should see a number of pods including `device-plugin-<hash>`, `topology-server-<hash>`, and `gpu-node-labeler-<hash>`.
 
 . Inspect the node allocatable resources:
 +
 [.copypaste]
 [source,bash]
 ----
-oc get $(oc get node -o name) -o=jsonpath='{.status.allocatable}' | jq .
+oc get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.allocatable}{"\n"}{end}' | while read name alloc; do echo "=== $name ==="; echo "$alloc" | jq .; done
 ----
 +
-You should see cpu, memory, pods and nvidia.com/gpu resource counts. If you see nvidia.com/mig-* resource counts, then you are running a MIG-capable profile.
+You should see cpu, memory, pods and `nvidia.com/gpu` resource counts. If you see `nvidia.com/mig-*` resource counts, then you are running a MIG-capable profile.
 
 The MIG resources may be present but show "0" as the count. This is expected from any prior MIG profiles that have been set and are no longer in use. They only reset when the Kubelet is restarted on the node.
 
@@ -172,7 +173,7 @@ You should see simulated NVIDIA GPU information for the active profile -- produc
 oc describe node -l nvidia.com/gpu.present=true | grep -A 15 "Allocated resources"
 ----
 + 
-You should see the GPU resource request and limits - usage - on the node.
+You should see the GPU resource request and limits - usage - on each node.
 
 === Verify
 
