@@ -90,7 +90,7 @@ Or click **Red Hat OpenShift AI** in the right panel tabs.
 
 . Verify you can see the Data Science Projects page.
 
-== Set up your namespace
+== Verify your namespaces
 
 . Verify your the user namespaces exists (user1, user2):
 +
