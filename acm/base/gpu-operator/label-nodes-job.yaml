@@ -179,14 +179,28 @@ spec:
           volumeMounts:
             - name: mig-config
               mountPath: /config
+          env:
+            - name: GPU_NODES
+              value: ""
           command:
             - /bin/bash
             - -c
             - |
               MIG_CONFIG=$(cat /config/mig.config)
-              for node in $(oc get nodes -l node-role.kubernetes.io/worker --no-headers -o name); do
-                echo "Labeling $node"
-                oc label "$node" run.ai/simulated-gpu-node-pool=default --overwrite
-                oc label "$node" node-role.kubernetes.io/runai-dynamic-mig=true --overwrite
-                oc annotate "$node" "run.ai/mig.config=${MIG_CONFIG}" --overwrite
-              done
+              if [ -n "${GPU_NODES}" ]; then
+                IFS=',' read -ra NODES <<< "${GPU_NODES}"
+                for nodename in "${NODES[@]}"; do
+                  nodename=$(echo "$nodename" | xargs)
+                  echo "Labeling node/$nodename"
+                  oc label "node/$nodename" run.ai/simulated-gpu-node-pool=default --overwrite
+                  oc label "node/$nodename" node-role.kubernetes.io/runai-dynamic-mig=true --overwrite
+                  oc annotate "node/$nodename" "run.ai/mig.config=${MIG_CONFIG}" --overwrite
+                done
+              else
+                for node in $(oc get nodes -l node-role.kubernetes.io/worker --no-headers -o name); do
+                  echo "Labeling $node"
+                  oc label "$node" run.ai/simulated-gpu-node-pool=default --overwrite
+                  oc label "$node" node-role.kubernetes.io/runai-dynamic-mig=true --overwrite
+                  oc annotate "$node" "run.ai/mig.config=${MIG_CONFIG}" --overwrite
+                done
+              fi

@@ -61,7 +61,7 @@ const DeployModal: React.FC<Props> = ({ isOpen, request, onClose, onComplete }) 
         {!result && !error && (
           <>
             <p style={{ marginBottom: '1rem' }}>
-              Deploy the following configuration to all worker nodes?
+              Deploy the following configuration to {request.targetNodes?.length || 0} selected node(s)?
             </p>
             <DescriptionList isHorizontal isCompact>
               <DescriptionListGroup>
@@ -77,6 +77,14 @@ const DeployModal: React.FC<Props> = ({ isOpen, request, onClose, onComplete }) 
                 <DescriptionListDescription>{request.gpuCount}</DescriptionListDescription>
               </DescriptionListGroup>
               <DescriptionListGroup>
+                <DescriptionListTerm>Target Nodes</DescriptionListTerm>
+                <DescriptionListDescription>
+                  {request.targetNodes?.map((n) => (
+                    <Label key={n} isCompact style={{ marginRight: '0.25rem' }}>{n}</Label>
+                  ))}
+                </DescriptionListDescription>
+              </DescriptionListGroup>
+              <DescriptionListGroup>
                 <DescriptionListTerm>MIG Strategy</DescriptionListTerm>
                 <DescriptionListDescription>{request.migStrategy || 'none'}</DescriptionListDescription>
               </DescriptionListGroup>
@@ -87,7 +95,7 @@ const DeployModal: React.FC<Props> = ({ isOpen, request, onClose, onComplete }) 
                 </DescriptionListGroup>
               )}
             </DescriptionList>
-            <Alert variant="warning" isInline title="This will update the topology ConfigMap, label nodes, and restart GPU operator workloads." style={{ marginTop: '1rem' }} />
+            <Alert variant="warning" isInline title="This will update the topology ConfigMap, label selected nodes, unlabel deselected nodes, and restart GPU operator workloads." style={{ marginTop: '1rem' }} />
           </>
         )}
 

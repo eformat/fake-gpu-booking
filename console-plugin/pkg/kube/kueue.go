@@ -86,7 +86,7 @@ func (c *Client) updateKueueResources(ctx context.Context, req *DeployRequest) S
 
 func (c *Client) getClusterCapacity(ctx context.Context) (cpuCores int, memGi int, err error) {
 	nodes, err := c.clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{
-		LabelSelector: "node-role.kubernetes.io/worker",
+		LabelSelector: "run.ai/simulated-gpu-node-pool=default",
 	})
 	if err != nil {
 		return 0, 0, err
@@ -100,7 +100,7 @@ func (c *Client) getClusterCapacity(ctx context.Context) (cpuCores int, memGi in
 
 func (c *Client) getWorkerNodeCount(ctx context.Context) (int, error) {
 	nodes, err := c.clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{
-		LabelSelector: "node-role.kubernetes.io/worker",
+		LabelSelector: "run.ai/simulated-gpu-node-pool=default",
 	})
 	if err != nil {
 		return 0, err

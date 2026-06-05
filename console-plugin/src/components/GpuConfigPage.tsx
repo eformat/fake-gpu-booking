@@ -14,6 +14,7 @@ import { DeployRequest, MIGSlice } from '../utils/constants';
 import ProfileCard from './ProfileCard';
 import MigConfigPanel from './MigConfigPanel';
 import CustomProfileForm, { CustomConfig } from './CustomProfileForm';
+import NodePicker from './NodePicker';
 import StatusPanel from './StatusPanel';
 import DeployModal from './DeployModal';
 import './styles.css';
@@ -30,6 +31,7 @@ const GpuConfigPage: React.FC = () => {
   const [customConfig, setCustomConfig] = React.useState<CustomConfig>({
     gpuProduct: '', gpuCount: 8, gpuMemory: 49152, migEnabled: false,
   });
+  const [selectedNodes, setSelectedNodes] = React.useState<string[]>([]);
   const [deployRequest, setDeployRequest] = React.useState<DeployRequest | null>(null);
   const [modalOpen, setModalOpen] = React.useState(false);
 
@@ -53,6 +55,15 @@ const GpuConfigPage: React.FC = () => {
       setCustomConfig((prev) => ({ ...prev, migEnabled: false }));
     }
   }, [customMigAvailable]);
+
+  React.useEffect(() => {
+    if (status?.nodes && selectedNodes.length === 0) {
+      const gpuNodes = status.nodes.filter((n) => n.gpuPool).map((n) => n.name);
+      if (gpuNodes.length > 0) {
+        setSelectedNodes(gpuNodes);
+      }
+    }
+  }, [status]);
 
   React.useEffect(() => {
     if (selectedProfile?.migSlices) {
@@ -85,6 +96,7 @@ const GpuConfigPage: React.FC = () => {
         gpuMemory: selectedProfile.gpuMemoryMB,
         migStrategy: selectedProfile.migSupport ? 'mixed' : 'none',
         migSlices: migSlices.filter((s) => s.count > 0),
+        targetNodes: selectedNodes,
       };
     } else {
       req = {
@@ -94,6 +106,7 @@ const GpuConfigPage: React.FC = () => {
         gpuMemory: customConfig.gpuMemory,
         migStrategy: customConfig.migEnabled ? 'mixed' : 'none',
         migSlices: customConfig.migEnabled ? migSlices.filter((s) => s.count > 0) : [],
+        targetNodes: selectedNodes,
       };
     }
     setDeployRequest(req);
@@ -105,7 +118,7 @@ const GpuConfigPage: React.FC = () => {
     fetchStatus();
   };
 
-  const canDeploy = isAdmin && (
+  const canDeploy = isAdmin && selectedNodes.length > 0 && (
     (activeTab === 'builtin' && selectedProfileId) ||
     (activeTab === 'custom' && customConfig.gpuProduct)
   );
@@ -176,6 +189,16 @@ const GpuConfigPage: React.FC = () => {
               migFamily={customMigFamily}
               slices={migSlices}
               onChange={setMigSlices}
+            />
+          </PageSection>
+        )}
+
+        {status?.nodes && (
+          <PageSection>
+            <NodePicker
+              nodes={status.nodes}
+              selectedNodes={selectedNodes}
+              onChange={setSelectedNodes}
             />
           </PageSection>
         )}

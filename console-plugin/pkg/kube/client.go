@@ -48,6 +48,7 @@ type DeployRequest struct {
 	GPUMemory   int        `json:"gpuMemory"`
 	MIGStrategy string     `json:"migStrategy"`
 	MIGSlices   []MIGSlice `json:"migSlices"`
+	TargetNodes []string   `json:"targetNodes,omitempty"`
 }
 
 type MIGSlice struct {
@@ -194,6 +195,12 @@ func (c *Client) labelNodes(ctx context.Context, req *DeployRequest) StepResult 
 		return StepResult{Step: "label-nodes", Status: "error", Message: err.Error()}
 	}
 
+	targetSet := map[string]bool{}
+	for _, name := range req.TargetNodes {
+		targetSet[name] = true
+	}
+	hasTargets := len(targetSet) > 0
+
 	migEnabled := req.MIGStrategy == "mixed" && len(req.MIGSlices) > 0
 	var migAnnotation string
 	if migEnabled {
@@ -201,15 +208,33 @@ func (c *Client) labelNodes(ctx context.Context, req *DeployRequest) StepResult 
 	}
 
 	var errors []string
+	labeled := 0
+	unlabeled := 0
 	for _, node := range nodes.Items {
+		if hasTargets && !targetSet[node.Name] {
+			if _, hasPool := node.Labels["run.ai/simulated-gpu-node-pool"]; hasPool {
+				if err := c.unlabelNode(ctx, &node); err != nil {
+					errors = append(errors, fmt.Sprintf("unlabel %s: %v", node.Name, err))
+				} else {
+					unlabeled++
+				}
+			}
+			continue
+		}
 		if err := c.labelNode(ctx, &node, migEnabled, migAnnotation); err != nil {
 			errors = append(errors, fmt.Sprintf("%s: %v", node.Name, err))
+		} else {
+			labeled++
 		}
 	}
 	if len(errors) > 0 {
 		return StepResult{Step: "label-nodes", Status: "error", Message: strings.Join(errors, "; ")}
 	}
-	return StepResult{Step: "label-nodes", Status: "ok", Message: fmt.Sprintf("%d nodes labeled", len(nodes.Items))}
+	msg := fmt.Sprintf("%d nodes labeled", labeled)
+	if unlabeled > 0 {
+		msg += fmt.Sprintf(", %d unlabeled", unlabeled)
+	}
+	return StepResult{Step: "label-nodes", Status: "ok", Message: msg}
 }
 
 func (c *Client) labelNode(ctx context.Context, node *corev1.Node, migEnabled bool, migAnnotation string) error {
@@ -221,6 +246,12 @@ func (c *Client) labelNode(ctx context.Context, node *corev1.Node, migEnabled bo
 	} else {
 		patchJSON = `{"metadata":{"labels":{"run.ai/simulated-gpu-node-pool":"default","node-role.kubernetes.io/runai-dynamic-mig":null},"annotations":{"run.ai/mig.config":null}}}`
 	}
+	_, err := c.clientset.CoreV1().Nodes().Patch(ctx, node.Name, types.StrategicMergePatchType, []byte(patchJSON), metav1.PatchOptions{})
+	return err
+}
+
+func (c *Client) unlabelNode(ctx context.Context, node *corev1.Node) error {
+	patchJSON := `{"metadata":{"labels":{"run.ai/simulated-gpu-node-pool":null,"node-role.kubernetes.io/runai-dynamic-mig":null},"annotations":{"run.ai/mig.config":null}}}`
 	_, err := c.clientset.CoreV1().Nodes().Patch(ctx, node.Name, types.StrategicMergePatchType, []byte(patchJSON), metav1.PatchOptions{})
 	return err
 }

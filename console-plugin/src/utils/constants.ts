@@ -29,6 +29,7 @@ export interface DeployRequest {
   gpuMemory: number;
   migStrategy: string;
   migSlices: MIGSlice[];
+  targetNodes: string[];
 }
 
 export interface StepResult {
