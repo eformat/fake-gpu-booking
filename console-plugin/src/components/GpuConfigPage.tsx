@@ -42,8 +42,11 @@ const GpuConfigPage: React.FC = () => {
 
   const customMigFamily = React.useMemo(() => {
     const product = customConfig.gpuProduct.toUpperCase();
+    if (product.includes('VERA RUBIN') || product.includes('VR200')) return migFamilies.find((f) => f.id === 'vera-rubin') || null;
+    if (product.includes('GB300')) return migFamilies.find((f) => f.id === 'gb300') || null;
+    if (product.includes('GB200')) return migFamilies.find((f) => f.id === 'gb200') || null;
     if (product.includes('H200')) return migFamilies.find((f) => f.id === 'h200') || null;
-    if (product.includes('80GB') || product.includes('H100') || product.includes('B200') || product.includes('GB200')) return migFamilies.find((f) => f.id === '80gb') || null;
+    if (product.includes('80GB') || product.includes('H100') || product.includes('B200')) return migFamilies.find((f) => f.id === '80gb') || null;
     if (product.includes('40GB') || product.includes('A100')) return migFamilies.find((f) => f.id === '40gb') || null;
     return null;
   }, [customConfig.gpuProduct, migFamilies]);

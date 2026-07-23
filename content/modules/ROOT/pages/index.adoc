@@ -37,7 +37,7 @@ image::architecture-overview.png[Workshop Architecture Overview,link=self,window
 | ML platform with workbenches, model serving, and hardware profiles linked to Kueue queues
 
 | **GPU Config Plugin**
-| OpenShift Console plugin for selecting GPU profiles (A100, H100, H200, B200, GB200, L40S, T4) and MIG configurations
+| OpenShift Console plugin for selecting GPU profiles (A100, H100, H200, B200, GB200, GB300, Vera Rubin, L40S, T4) and MIG configurations
 
 | **Node Feature Discovery**
 | Labels nodes with hardware capabilities for GPU scheduling
@@ -58,6 +58,8 @@ The following GPU profiles are available:
 | h200 | NVIDIA H200 | 141 GiB | Yes | Hopper
 | b200 | NVIDIA B200 | 192 GiB | Yes | Blackwell
 | gb200 | NVIDIA GB200 NVL | 192 GiB | Yes | Blackwell
+| gb300 | NVIDIA GB300 NVL | 288 GiB | Yes | Blackwell Ultra
+| vera-rubin | NVIDIA Vera Rubin NVL | 288 GiB | Yes | Rubin
 | l40s | NVIDIA L40S | 48 GiB | No | Ada Lovelace
 | t4 | NVIDIA T4 | 16 GiB | No | Turing
 |===

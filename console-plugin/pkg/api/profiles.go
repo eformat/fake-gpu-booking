@@ -52,6 +52,30 @@ var MIGFamilies = []MIGFamily{
 			"1g.18gb", "2g.35gb", "3g.71gb",
 		},
 	},
+	{
+		ID:    "gb200",
+		Match: "*GB200*",
+		Slices: []string{
+			"1g.23gb", "1g.47gb", "2g.47gb",
+			"3g.93gb", "4g.93gb", "7g.189gb",
+		},
+	},
+	{
+		ID:    "gb300",
+		Match: "*GB300*",
+		Slices: []string{
+			"1g.35gb", "1g.70gb", "2g.70gb",
+			"3g.139gb", "4g.139gb", "7g.278gb",
+		},
+	},
+	{
+		ID:    "vera-rubin",
+		Match: "*Vera Rubin*",
+		Slices: []string{
+			"1g.35gb", "1g.70gb", "2g.70gb",
+			"3g.139gb", "4g.139gb", "7g.278gb",
+		},
+	},
 }
 
 var BuiltinProfiles = []GPUProfile{
@@ -101,12 +125,34 @@ var BuiltinProfiles = []GPUProfile{
 	{
 		ID: "gb200", Name: "NVIDIA GB200 NVL", Product: "NVIDIA-GB200-NVL",
 		Architecture: "Blackwell", Memory: "192 GiB HBM3e",
-		GPUCount: 8, GPUMemoryMB: 196608, MIGSupport: true, MIGFamily: "80gb",
+		GPUCount: 8, GPUMemoryMB: 196608, MIGSupport: true, MIGFamily: "gb200",
 		MIGSlices: []MIGSlice{
-			{Name: "nvidia.com/mig-1g.10gb", Count: 56},
-			{Name: "nvidia.com/mig-2g.20gb", Count: 16},
-			{Name: "nvidia.com/mig-3g.40gb", Count: 16},
-			{Name: "nvidia.com/mig-7g.80gb", Count: 8},
+			{Name: "nvidia.com/mig-1g.23gb", Count: 56},
+			{Name: "nvidia.com/mig-2g.47gb", Count: 16},
+			{Name: "nvidia.com/mig-3g.93gb", Count: 16},
+			{Name: "nvidia.com/mig-7g.189gb", Count: 8},
+		},
+	},
+	{
+		ID: "gb300", Name: "NVIDIA GB300 NVL", Product: "NVIDIA-GB300-NVL",
+		Architecture: "Blackwell Ultra", Memory: "288 GiB HBM3e",
+		GPUCount: 8, GPUMemoryMB: 294912, MIGSupport: true, MIGFamily: "gb300",
+		MIGSlices: []MIGSlice{
+			{Name: "nvidia.com/mig-1g.35gb", Count: 56},
+			{Name: "nvidia.com/mig-2g.70gb", Count: 16},
+			{Name: "nvidia.com/mig-3g.139gb", Count: 16},
+			{Name: "nvidia.com/mig-7g.278gb", Count: 8},
+		},
+	},
+	{
+		ID: "vera-rubin", Name: "NVIDIA Vera Rubin NVL", Product: "NVIDIA-Vera-Rubin-NVL",
+		Architecture: "Rubin", Memory: "288 GiB HBM4",
+		GPUCount: 8, GPUMemoryMB: 294912, MIGSupport: true, MIGFamily: "vera-rubin",
+		MIGSlices: []MIGSlice{
+			{Name: "nvidia.com/mig-1g.35gb", Count: 56},
+			{Name: "nvidia.com/mig-2g.70gb", Count: 16},
+			{Name: "nvidia.com/mig-3g.139gb", Count: 16},
+			{Name: "nvidia.com/mig-7g.278gb", Count: 8},
 		},
 	},
 	{

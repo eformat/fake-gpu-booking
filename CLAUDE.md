@@ -140,6 +140,8 @@ Per worker node (configurable via gpu-config-plugin or values files):
 | h200 | NVIDIA H200 | 141 GiB HBM3e | Yes | Hopper |
 | b200 | NVIDIA B200 | 192 GiB HBM3e | Yes | Blackwell |
 | gb200 | NVIDIA GB200 NVL | 192 GiB HBM3e | Yes | Blackwell |
+| gb300 | NVIDIA GB300 NVL | 288 GiB HBM3e | Yes | Blackwell Ultra |
+| vera-rubin | NVIDIA Vera Rubin NVL | 288 GiB HBM4 | Yes | Rubin |
 | l40s | NVIDIA L40S | 48 GiB GDDR6 | No | Ada Lovelace |
 | t4 | NVIDIA T4 | 16 GiB GDDR6 | No | Turing |
 
@@ -148,6 +150,9 @@ Per worker node (configurable via gpu-config-plugin or values files):
 - **\*40GB\*** (A100): 1g.5gb, 1g.5gb+me, 1g.10gb, 2g.10gb, 3g.20gb, 4g.20gb, 7g.40gb
 - **\*80GB\*** (H100): 1g.10gb, 1g.10gb+me, 1g.20gb, 2g.20gb, 3g.40gb, 4g.40gb, 7g.80gb
 - **\*H200\***: 1g.18gb, 2g.35gb, 3g.71gb
+- **\*GB200\***: 1g.23gb, 1g.47gb, 2g.47gb, 3g.93gb, 4g.93gb, 7g.189gb
+- **\*GB300\***: 1g.35gb, 1g.70gb, 2g.70gb, 3g.139gb, 4g.139gb, 7g.278gb
+- **\*Vera Rubin\***: 1g.35gb, 1g.70gb, 2g.70gb, 3g.139gb, 4g.139gb, 7g.278gb
 
 ## GPU config plugin
 
