@@ -93,7 +93,7 @@ func (c *Client) Deploy(ctx context.Context, req *DeployRequest) *DeployResult {
 	result.Steps = append(result.Steps, c.labelNodes(ctx, req))
 	result.Steps = append(result.Steps, c.restartWorkloads(ctx))
 	result.Steps = append(result.Steps, c.updateKueueResources(ctx, req))
-	result.Steps = append(result.Steps, c.rolloutRestartBookingPlugin(ctx))
+	//result.Steps = append(result.Steps, c.rolloutRestartBookingPlugin(ctx))
 
 	return result
 }
